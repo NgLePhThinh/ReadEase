@@ -25,6 +25,7 @@ spring:
     properties:
       mail:
         mime:
+
           charset: UTF
         smtp:
           writetimeout: 10000
