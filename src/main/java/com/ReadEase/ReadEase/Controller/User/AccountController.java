@@ -31,6 +31,9 @@ public class AccountController {
                 .orElseThrow(
                         () -> new ResponseStatusException(HttpStatus.BAD_REQUEST,"invalid credentials")
                 );
+
+
+
         if(!passwordEncoder.matches(req.getOldPwd(),user.getPassword()))
             return new ResponseEntity<>("Password is not valid",HttpStatus.OK);
         user.setPassword(passwordEncoder.encode(req.getNewPwd()));

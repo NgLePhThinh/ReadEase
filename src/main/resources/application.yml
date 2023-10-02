@@ -1,5 +1,10 @@
 
+server:
+  port: ${SERVER_PORT:8080}
+
 spring:
+  profiles:
+    active: ${ACTIVE_PROFILE:dev}
   main:
     allow-circular-references: true
   datasource:
@@ -16,16 +21,16 @@ spring:
       hibernate:
         format_sql:true
     show-sql: true
+    database-platform: org.hibernate.dialect.MySQLDialect
   mail:
     host: smtp.gmail.com
     port: 587
-    username: nlnktpm@gmail.com
-    password: pkalikotmclhgbsh
+    username: readeaseapp@gmail.com
+    password: ssamedljaceodrij
     default-encoding: UTF-8
     properties:
       mail:
         mime:
-
           charset: UTF
         smtp:
           writetimeout: 10000
@@ -37,6 +42,18 @@ spring:
             required: true
     verify:
       host: http://localhost:8080
+
+application:
+  security:
+    jwt:
+      secret-key: 6a7d943fae1494133ebffb2bdf62ca3b83433052276bddd0cb27c380d0833e64
+      expiration: 86400000 # a day
+      refresh-token:
+        expiration: 604800000 # 7 days
+      expiration-reset-password: 3600000
+
+
+
 
 
 

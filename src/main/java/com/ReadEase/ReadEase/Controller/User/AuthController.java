@@ -1,15 +1,18 @@
 package com.ReadEase.ReadEase.Controller.User;
 
 import com.ReadEase.ReadEase.Config.GeneratePassword;
+import com.ReadEase.ReadEase.Config.JwtService;
 import com.ReadEase.ReadEase.Controller.User.Request.LogoutRequest;
 import com.ReadEase.ReadEase.Controller.User.Request.SignUpRequest;
-import com.ReadEase.ReadEase.Controller.User.Response.LoginResponse;
+import com.ReadEase.ReadEase.Controller.User.Response.AuthResponse;
 import com.ReadEase.ReadEase.Model.User;
 import com.ReadEase.ReadEase.Repo.RoleRepo;
 import com.ReadEase.ReadEase.Repo.UserRepo;
+import com.ReadEase.ReadEase.Service.EmailService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -23,28 +26,38 @@ import java.util.Date;
 @RequestMapping("/api/auth")
 @AllArgsConstructor
 public class AuthController {
+    private final EmailService emailService;
     private final UserRepo userRepo;
     private final RoleRepo roleRepo;
     private  final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+    private final AuthenticationManager authenticationManager;
 
     @GetMapping("/")
     public  ResponseEntity<?> getAllUser(){
         GeneratePassword pwdGenerator = new GeneratePassword();
-
         return new ResponseEntity<> (pwdGenerator.generateStrongPassword(8), HttpStatus.OK);
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<?> signUp(@RequestBody SignUpRequest res){
-        if(userRepo.findUserByEmail(res.getEmail()) != null)
+    public ResponseEntity<?> signUp(@RequestBody SignUpRequest req){
+        if(userRepo.countUserByEmail(req.getEmail()) == 1)
             return new ResponseEntity<>("Email already exists!!!", HttpStatus.BAD_REQUEST);
 
         User newUser =  roleRepo.findById(1).map(role ->{
-            User user = new User(res.getEmail(), passwordEncoder.encode(res.getPassword()), role);
+            User user = new User(req.getEmail(), passwordEncoder.encode(req.getPassword()), role);
             return userRepo.save(user);
         }).orElseThrow();
+        System.out.println(newUser);
 
-        return new ResponseEntity<>(newUser, HttpStatus.CREATED);
+        AuthResponse res = AuthResponse.builder()
+                .userID(newUser.getID())
+                .email(newUser.getEmail())
+                .avatar(newUser.getAvatar())
+                .token("")
+                .build();
+
+        return new ResponseEntity<>(res, HttpStatus.CREATED);
     }
 
     @PostMapping("/login/step1")
@@ -63,14 +76,18 @@ public class AuthController {
         if(!passwordEncoder.matches(user.getPassword(), userLogin.getPassword()))
             return new ResponseEntity<>("Password is not valid",HttpStatus.OK);
 
-        LoginResponse res = LoginResponse.builder()
+        String jwtToken = jwtService.generateToken(userLogin);
+        String refreshToken = jwtService.generateRefreshToken(userLogin);
+
+        AuthResponse res = AuthResponse.builder()
                 .userID(userLogin.getID())
                 .email(userLogin.getEmail())
                 .avatar(userLogin.getAvatar())
-                .token("Phát triển sau")
+                .token(jwtToken)
+                .refreshToken(refreshToken)
                 .currentDocumentReading(userLogin.getLastReadingDocument())
                 .collections(userLogin.getCollections())
-                .documents(userLogin.getDocumentsSortedByCreatedAtDesc())
+                .documents(userLogin.getDocumentsSortedByLastReadDesc())
                 .build();
 
         return new ResponseEntity<>(res,HttpStatus.OK);
@@ -86,6 +103,36 @@ public class AuthController {
         return new ResponseEntity<>("Log out successfully",HttpStatus.OK);
     }
 
+    @PostMapping("/forgot-password-step1")
+    public ResponseEntity<?> forgotPasswordStep1(@RequestBody User req){
+        User _user = userRepo.findUserByEmail(req.getEmail()).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email invalid!!!!")
+        );
+        GeneratePassword generatePassword = new GeneratePassword();
+        String resetPasswordToken = jwtService.generateResetPasswordToken(_user);
+        emailService.sendHTMLEmail(_user.getEmail(), resetPasswordToken);
+        return  new ResponseEntity<>(generatePassword.generateStrongPassword(8), HttpStatus.OK);
+    }
+
+    @GetMapping("/forgot-password-step2")
+    public ResponseEntity<?> forgotPasswordStep2(@RequestParam("token") String resetPasswordToken ){
+        if(resetPasswordToken == null || jwtService.isTokenExpried(resetPasswordToken))
+            new ResponseEntity<>("Token invalid!!!",HttpStatus.BAD_REQUEST);
+
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+    @PostMapping("/forgot-password-step3")
+    public ResponseEntity<?> forgotPasswordStep2(@RequestParam("token") String resetPasswordToken,@RequestBody  User req ){
+        if(resetPasswordToken == null || req.getPassword() == null || jwtService.isTokenExpried(resetPasswordToken))
+            return new ResponseEntity<>("Request invalid!!!",HttpStatus.BAD_REQUEST);
+        String email = jwtService.extractUserEmail(resetPasswordToken);
+
+        userRepo.updatePasswordByEmail(email,passwordEncoder.encode(req.getPassword()));
+
+        User user = userRepo.findUserByEmail(email).orElseThrow();
+
+        return new ResponseEntity<>(passwordEncoder.matches(req.getPassword(), user.getPassword()),HttpStatus.OK);
+    }
 
 
 

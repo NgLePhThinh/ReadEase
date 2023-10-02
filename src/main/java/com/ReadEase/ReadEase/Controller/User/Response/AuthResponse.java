@@ -4,7 +4,6 @@ import com.ReadEase.ReadEase.Model.Collection;
 import com.ReadEase.ReadEase.Model.Document;
 import lombok.*;
 
-import javax.print.Doc;
 import java.util.Set;
 
 @Setter
@@ -13,11 +12,12 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class LoginResponse {
+public class AuthResponse {
     private String userID;
     private String email;
     private String avatar;
     private String token;
+    private String refreshToken;
     private Document currentDocumentReading;
     private Set<Document> documents;
     private Set<Collection> collections;

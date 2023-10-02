@@ -1,6 +1,8 @@
 package com.ReadEase.ReadEase.Model;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -11,10 +13,12 @@ import java.util.Date;
 @Setter
 @Getter
 @AllArgsConstructor
-//@Entity
+@Entity
 @Builder
-public class AccessToken {
+public class GGAccessToken {
+    @Id
+    @GeneratedValue
+    private int id;
     private String accessToken;
-    private Long expriedAt;
-    private Date createAt;
+    private Date expriedAt;
 }

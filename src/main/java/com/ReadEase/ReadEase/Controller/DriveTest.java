@@ -22,6 +22,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.Date;
 
 @RestController
 @RequestMapping("/drive")
@@ -38,8 +39,15 @@ public class DriveTest {
 
 //        credential.setExpirationTimeMilliseconds(1L);
 //        revokeToken(credential.getAccessToken());
-        TokenResponse response =  refreshAccessToken(credential);
-        return new ResponseEntity<>(response.getAccessToken(), HttpStatus.OK);
+//        TokenResponse response =  refreshAccessToken(credential);
+//        credential.setExpiresInSeconds(24*3600L);
+
+        Date temp = new Date();
+        long dateLong = temp.getTime();
+        Date date  = new Date (dateLong + 3600*1000);
+
+
+        return new ResponseEntity<>(temp.getTime() > date.getTime(), HttpStatus.OK);
     }
     public  TokenResponse refreshAccessToken(Credential credential) throws IOException{
         try {

@@ -9,6 +9,9 @@ import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.Parameter;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -21,7 +24,7 @@ import java.util.stream.Collectors;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class User {
+public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq")
     @GenericGenerator(
@@ -80,11 +83,9 @@ public class User {
 
 
 
-    public Set<Document> getDocumentsSortedByCreatedAtDesc() {
-
-
+    public Set<Document> getDocumentsSortedByLastReadDesc() {
         Comparator<Document> descendingComparator =
-                (doc1, doc2) -> doc2.getCreateAt().compareTo(doc1.getCreateAt());
+                (doc1, doc2) -> doc2.getCreateAt().compareTo(doc1.getLastRead());
 
         TreeSet<Document> sortedSet = new TreeSet<>(descendingComparator);
 
@@ -106,5 +107,35 @@ public class User {
                 .max(Comparator.comparing(Document::getLastRead));
 
         return latestDocument.orElse(null);
+    }
+
+    @Override
+    public java.util.Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority(this.role.getRole()));
+    }
+
+    @Override
+    public String getUsername() {
+        return this.email;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
     }
 }
