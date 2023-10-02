@@ -103,7 +103,7 @@ public class AuthController {
         return new ResponseEntity<>("Log out successfully",HttpStatus.OK);
     }
 
-    @PostMapping("/forgot-password-step1")
+    @PostMapping("/forgot-password/step1")
     public ResponseEntity<?> forgotPasswordStep1(@RequestBody User req){
         User _user = userRepo.findUserByEmail(req.getEmail()).orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email invalid!!!!")
@@ -114,14 +114,14 @@ public class AuthController {
         return  new ResponseEntity<>(generatePassword.generateStrongPassword(8), HttpStatus.OK);
     }
 
-    @GetMapping("/forgot-password-step2")
+    @GetMapping("/forgot-password/step2")
     public ResponseEntity<?> forgotPasswordStep2(@RequestParam("token") String resetPasswordToken ){
         if(resetPasswordToken == null || jwtService.isTokenExpried(resetPasswordToken))
             new ResponseEntity<>("Token invalid!!!",HttpStatus.BAD_REQUEST);
 
         return new ResponseEntity<>(HttpStatus.OK);
     }
-    @PostMapping("/forgot-password-step3")
+    @PostMapping("/forgot-password/step3")
     public ResponseEntity<?> forgotPasswordStep2(@RequestParam("token") String resetPasswordToken,@RequestBody  User req ){
         if(resetPasswordToken == null || req.getPassword() == null || jwtService.isTokenExpried(resetPasswordToken))
             return new ResponseEntity<>("Request invalid!!!",HttpStatus.BAD_REQUEST);
