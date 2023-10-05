@@ -50,6 +50,9 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private long totalAccessTime;
 
+    @Column(nullable = false)
+    private int totalCapacity;
+
     @ManyToOne
     @JoinColumn(name = "ROLE_ID",nullable = false)
     private Role role;
@@ -76,9 +79,16 @@ public class User implements UserDetails {
     public User(String ID){
         this.ID = ID;
     }
-    public User(String ID, String avatar){
+    public User(String ID, String email, String password, Role role){
         this.ID = ID;
-        this.avatar = avatar;
+        this.email = email;
+        this.password = password;
+        this.avatar = "";
+        this.lastAccess = new Date();
+        this.createAt = new Date();
+        this.totalAccessTime = 0;
+        this.totalCapacity  = 0;
+        this.role = role;
     }
 
 

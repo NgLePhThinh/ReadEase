@@ -25,7 +25,8 @@ public class EmailService {
     private String host;
     @Value("${spring.mail.username}")
     private String fromEmail;
-    private String clientHost  = "https://read-ease.azurewebsites.net";
+    @Value("${application.cross-origin}")
+    private String clientHost;
     private final TemplateEngine templateEngine;
     private final JavaMailSender emailSender;
 

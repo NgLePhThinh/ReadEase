@@ -1,5 +1,6 @@
 package com.ReadEase.ReadEase.Config;
 
+import com.ReadEase.ReadEase.Repo.TokenRepo;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -19,7 +20,7 @@ import java.io.IOException;
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-
+    private final TokenRepo tokenRepo;
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
 
@@ -42,8 +43,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         userEmail = jwtService.extractUserEmail(jwt); //todo extract the userEmail form jwt token
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
-
-            if (jwtService.isTokenValid(jwt, userDetails)) {
+            //Kiểm tra token trong Authorization có phải là token hiện tại hay không
+            var isValidToken = tokenRepo.findTokenByToken(jwt).orElse(null);
+            if (jwtService.isTokenValid(jwt, userDetails) && isValidToken != null) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
                         null,

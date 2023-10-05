@@ -2,10 +2,8 @@ package com.ReadEase.ReadEase.Controller.User;
 
 import com.ReadEase.ReadEase.Controller.User.Request.ChangePasswordRequest;
 import com.ReadEase.ReadEase.Model.User;
-import com.ReadEase.ReadEase.Repo.RoleRepo;
 import com.ReadEase.ReadEase.Repo.UserRepo;
 import lombok.AllArgsConstructor;
-import org.springframework.aop.scope.ScopedProxyUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,6 +15,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
 import java.util.HashMap;
+
+
 
 @RestController
 @RequestMapping("/api/user/account")
@@ -31,9 +31,6 @@ public class AccountController {
                 .orElseThrow(
                         () -> new ResponseStatusException(HttpStatus.BAD_REQUEST,"invalid credentials")
                 );
-
-
-
         if(!passwordEncoder.matches(req.getOldPwd(),user.getPassword()))
             return new ResponseEntity<>("Password is not valid",HttpStatus.OK);
         user.setPassword(passwordEncoder.encode(req.getNewPwd()));
