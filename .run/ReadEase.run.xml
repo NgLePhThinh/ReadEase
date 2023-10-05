@@ -1,0 +1,14 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="ReadEase" type="Application" factoryName="Application">
+    <envs>
+      <env name="CLIENT_ID" value="726593784919-cqfv8c53np0li2n3d3eb3soens15ui0u.apps.googleusercontent.com" />
+      <env name="CLIENT_SECRET" value="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" />
+      <env name="SERVER_PORT" value="8080" />
+    </envs>
+    <option name="MAIN_CLASS_NAME" value="com.ReadEase.ReadEase.ReadEaseApplication" />
+    <module name="ReadEase" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

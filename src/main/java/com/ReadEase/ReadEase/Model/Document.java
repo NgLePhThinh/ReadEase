@@ -7,12 +7,15 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 @Entity
-@Table(name="document")
+@Table(name = "document",
+        indexes = {
+                @Index(name = "idx_name", columnList = "name")
+        }
+
+)
 @Builder()
 @Data
 @Getter
@@ -28,6 +31,8 @@ public class Document {
     @Column(nullable = false)
     private String url;
     @Column(nullable = false)
+    private String thumbnailLink;
+    @Column(nullable = false)
     private int numberOfPagesReading;
     @Column(nullable = false)
     private float star;
@@ -40,15 +45,14 @@ public class Document {
     @Column(nullable = false)
     private Date createAt;
     @OneToMany
-    @JoinColumn(name = "DOCUMENT_ID",nullable = false)
-    @OnDelete(action =  OnDeleteAction.CASCADE)
+    @JoinColumn(name = "DOCUMENT_ID", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Set<Note> notes;
 
     @OneToMany
-    @JoinColumn(name = "DOCUMENT_ID",nullable = false)
-    @OnDelete(action =  OnDeleteAction.CASCADE)
+    @JoinColumn(name = "DOCUMENT_ID", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Set<HighLight> highLights;
-
 
 
     @ManyToMany(fetch = FetchType.LAZY,
@@ -59,7 +63,6 @@ public class Document {
             mappedBy = "documents")
     @JsonIgnore
     private Set<Collection> collections;
-
 
 
 }

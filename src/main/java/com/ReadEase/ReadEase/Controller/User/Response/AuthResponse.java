@@ -17,7 +17,6 @@ public class AuthResponse {
     private String email;
     private String avatar;
     private String token;
-    private String refreshToken;
     private Document currentDocumentReading;
     private Set<Document> documents;
     private Set<Collection> collections;

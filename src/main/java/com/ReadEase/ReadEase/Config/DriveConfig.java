@@ -12,7 +12,6 @@ import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.DriveScopes;
-import com.google.auth.oauth2.OAuth2Credentials;
 import org.springframework.stereotype.Service;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -24,7 +23,7 @@ import java.util.List;
 
 /* class to demonstrate use of Drive files list API */
 @Service
-public class DriveQuickstart {
+public class DriveConfig {
     /**
      * Application name.
      */
@@ -64,7 +63,7 @@ public class DriveQuickstart {
     public Credential getCredentials (final NetHttpTransport HTTP_TRANSPORT)
             throws  IOException {
         // Load client secrets.
-        InputStream in = DriveQuickstart.class.getResourceAsStream(CREDENTIALS_FILE_PATH);
+        InputStream in = DriveConfig.class.getResourceAsStream(CREDENTIALS_FILE_PATH);
         if (in == null) {
             throw new FileNotFoundException("Resource not found: " + CREDENTIALS_FILE_PATH);
         }

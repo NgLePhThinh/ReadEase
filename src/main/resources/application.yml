@@ -1,4 +1,3 @@
-
 server:
   port: ${SERVER_PORT:8080}
 
@@ -8,7 +7,7 @@ spring:
   main:
     allow-circular-references: true
   datasource:
-    url:  jdbc:mysql://${MYSQL_HOST:localhost}:3308/readease_test
+    url:  jdbc:mysql://${MYSQL_HOST:localhost}:3308/readease
     username: root
     password: root_password
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -50,10 +49,12 @@ application:
       expiration: 86400000 # a day
       refresh-token:
         expiration: 604800000 # 7 days
-      expiration-reset-password: 3600000
-
-
-
+      expiration-reset-password: 3600000 # 1 hour
+  cross-origin: http://localhost:3000 # front end
+  drive-api:
+    client-id: 726593784919-cqfv8c53np0li2n3d3eb3soens15ui0u.apps.googleusercontent.com
+    client-secret: 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
+# "https://read-ease.azurewebsites.net"
 
 
 

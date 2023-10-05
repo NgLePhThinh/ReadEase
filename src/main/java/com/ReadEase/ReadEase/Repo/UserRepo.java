@@ -38,4 +38,5 @@ public interface UserRepo extends JpaRepository<User, String> {
     @Query(value = "SELECT count(*) FROM user u where u.email = ?1", nativeQuery = true)
     int countUserByEmail(String email);
 
+
 }
