@@ -8,6 +8,6 @@ import lombok.*;
 @NoArgsConstructor
 @ToString
 public class CollectionReq {
-    private String UserID;
+    private String userID;
     private String collectionName;
 }

@@ -14,7 +14,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.util.Date;
 
 
 @Component
@@ -30,18 +29,17 @@ public class DriveService {
         final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
         Credential credential = drive.getCredentials(HTTP_TRANSPORT);
 
-        TokenResponse accessToken = new TokenResponse();
-        accessToken.setAccessToken(credential.getAccessToken());
-        accessToken.setExpiresInSeconds(credential.getExpiresInSeconds());
+       TokenResponse accessToken = new TokenResponse();
+       accessToken.setAccessToken(credential.getAccessToken());
+       accessToken.setExpiresInSeconds(credential.getExpiresInSeconds());
 
-        if(credential.getExpiresInSeconds() < 0L)
-            accessToken = refreshAccessToken(credential);
+       if(credential.getExpiresInSeconds() < 0L)
+           accessToken = refreshAccessToken(credential);
 
         return accessToken;
     }
     private   TokenResponse refreshAccessToken(Credential credential) throws IOException{
         try {
-
             TokenResponse response = new GoogleRefreshTokenRequest(
                     new NetHttpTransport(), new GsonFactory(),
                     credential.getRefreshToken(), clientID,

@@ -14,12 +14,11 @@ import com.ReadEase.ReadEase.Service.EmailService;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -28,26 +27,20 @@ import java.util.Date;
 
 @RestController
 @RequestMapping("/api/auth")
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class AuthController {
 
-//    @Value("${application.cross-origin}")
-//    private String domain;
-//    @Value("${application.security.jwt.refresh-token.expiration}")
-//    private int maxAgeCookie;
+    @Value("${application.cross-origin}")
+    private String domain;
+    @Value("${application.security.jwt.refresh-token.expiration}")
+    private int maxAgeCookie;
     private final EmailService emailService;
     private final UserRepo userRepo;
     private final RoleRepo roleRepo;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final TokenRepo tokenRepo;
-    private final AuthenticationManager authenticationManager;
 
-    @GetMapping("/")
-    public ResponseEntity<?> getAllUser() {
-        GeneratePassword pwdGenerator = new GeneratePassword();
-        return new ResponseEntity<>(pwdGenerator.generateStrongPassword(8), HttpStatus.OK);
-    }
 
     @PostMapping("/signup")
     public ResponseEntity<?> signUp(@RequestBody SignUpRequest req) {
@@ -67,44 +60,90 @@ public class AuthController {
 
         return new ResponseEntity<>(res, HttpStatus.CREATED);
     }
+    @PostMapping("/login")
+    public ResponseEntity<?> loginWithGoogle(@Nonnull HttpServletResponse response,@RequestBody User req){
+        User user = userRepo.findUserByEmail(req.getEmail()).orElse(null);
+        boolean isFirstLogin = false;
+        if(user == null){
+            GeneratePassword generatePassword = new GeneratePassword();
+            String pwd = generatePassword.generateStrongPassword(8);
+            user = roleRepo.findById(1).map(role -> {
+                User _user = new User(req.getEmail(), passwordEncoder.encode(pwd), role);
+                _user.setAvatar(req.getAvatar());
+                return userRepo.save(_user);
+            }).orElseThrow();
 
-    @PostMapping("/login/step1")
-    public ResponseEntity<?> loginStep1(@RequestBody User req) {
-        if (userRepo.countUserByEmail(req.getEmail()) == 0)
-            return new ResponseEntity<>("Email is not valid!!!", HttpStatus.BAD_REQUEST);
-        return new ResponseEntity<>("Email is valid", HttpStatus.OK);
-    }
-
-    @PostMapping("/login/step2")
-    public ResponseEntity<?> loginStep2(@Nonnull HttpServletResponse response,@RequestBody User req) {
-        if (userRepo.countUserByEmail(req.getEmail()) == 0)
-            return new ResponseEntity<>("Email is not valid!!!", HttpStatus.BAD_REQUEST);
-
-        User userLogin = userRepo.findUserByEmail(req.getEmail()).orElseThrow();
-        if (!passwordEncoder.matches(req.getPassword(), userLogin.getPassword()))
-            return new ResponseEntity<>("Password is not valid", HttpStatus.BAD_REQUEST);
-
-        String jwtToken = jwtService.generateToken(userLogin);
+            isFirstLogin = true;
+        }
+        String jwtToken = jwtService.generateToken(user);
 
         //Update token into database
-        if ( checkExistAndSaveToken(userLogin, jwtToken, TokenType.ACCESS))
+        if ( checkExistAndSaveToken(user, jwtToken, TokenType.ACCESS))
             return new ResponseEntity<>("Can not sign in now!!!",HttpStatus.FORBIDDEN);
 
-        Cookie cookie = new Cookie("refreshToken", jwtService.generateRefreshToken(userLogin));
-        cookie.setMaxAge(604800000/1000);
+        user.setLastAccess(new Date());
+        userRepo.save(user);
+
+        Cookie cookie = new Cookie("refreshToken", jwtService.generateRefreshToken(user));
+        cookie.setMaxAge(maxAgeCookie/1000);
         cookie.setHttpOnly(true);
 //        cookie.setDomain("http://localhost:3000");
         response.addCookie(cookie);
 
 
         AuthResponse res = AuthResponse.builder()
-                .userID(userLogin.getID())
-                .email(userLogin.getEmail())
-                .avatar(userLogin.getAvatar())
+                .userID(user.getID())
+                .email(user.getEmail())
+                .avatar(user.getAvatar())
                 .token(jwtToken)
-                .currentDocumentReading(userLogin.getLastReadingDocument())
-                .collections(userLogin.getCollections())
-                .documents(userLogin.getDocumentsSortedByLastReadDesc())
+                .build();
+        if(!isFirstLogin){
+            res.setCurrentDocumentReading(user.getLastReadingDocument());
+            res.setCollections(user.getCollections());
+            res.setDocuments(user.getDocumentCustom(0,10));
+        }
+
+        return new ResponseEntity<>(res, HttpStatus.OK);
+    }
+    @PostMapping("/login/step1")
+    public ResponseEntity<?> loginStep1(@RequestBody User req) {
+        if (userRepo.countUserByEmail(req.getEmail()) == 0)
+            return new ResponseEntity<>("Email is not valid!!!", HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>("Email is valid", HttpStatus.OK);
+    }
+    @PostMapping("/login/step2")
+    public ResponseEntity<?> loginStep2(@Nonnull HttpServletResponse response,@RequestBody User req) {
+        if (userRepo.countUserByEmail(req.getEmail()) == 0)
+            return new ResponseEntity<>("Email is not valid!!!", HttpStatus.BAD_REQUEST);
+
+        User user = userRepo.findUserByEmail(req.getEmail()).orElseThrow();
+        if (!passwordEncoder.matches(req.getPassword(), user.getPassword()))
+            return new ResponseEntity<>("Password is not valid", HttpStatus.BAD_REQUEST);
+
+        String jwtToken = jwtService.generateToken(user);
+
+        //Update token into database
+        if ( checkExistAndSaveToken(user, jwtToken, TokenType.ACCESS))
+            return new ResponseEntity<>("Can not sign in now!!!",HttpStatus.FORBIDDEN);
+
+        user.setLastAccess(new Date());
+        userRepo.save(user);
+
+        Cookie cookie = new Cookie("refreshToken", jwtService.generateRefreshToken(user));
+        cookie.setMaxAge(maxAgeCookie/1000);
+        cookie.setHttpOnly(true);
+//        cookie.setDomain("http://localhost:3000");
+        response.addCookie(cookie);
+
+
+        AuthResponse res = AuthResponse.builder()
+                .userID(user.getID())
+                .email(user.getEmail())
+                .avatar(user.getAvatar())
+                .token(jwtToken)
+                .currentDocumentReading(user.getLastReadingDocument())
+                .collections(user.getCollections())
+                .documents(user.getDocumentCustom(0,10))
                 .build();
 
         return new ResponseEntity<>(res, HttpStatus.OK);
@@ -119,7 +158,9 @@ public class AuthController {
 
         long totalTime = Duration.between(user.getLastAccess().toInstant(), new Date().toInstant()).getSeconds();
 
-        userRepo.updateLastAccessByEmail(req.getEmail(), new Date(), totalTime);
+        user.setLastAccess(new Date());
+        user.setTotalAccessTime(user.getTotalAccessTime() + totalTime);
+        userRepo.save(user);
         tokenRepo.deleteTokenByUserID(user.getID());
 
         return new ResponseEntity<>("Log out successfully", HttpStatus.OK);
@@ -141,7 +182,6 @@ public class AuthController {
 
     @GetMapping("/forgot-password/step2")
     public ResponseEntity<?> forgotPasswordStep2(@RequestParam("token") String resetPasswordToken) {
-
         var token = tokenRepo.findTokenByToken(resetPasswordToken)
                 .orElse(null);
 

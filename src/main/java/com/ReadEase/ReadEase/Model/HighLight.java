@@ -1,6 +1,5 @@
 package com.ReadEase.ReadEase.Model;
 
-import jakarta.annotation.Nonnull;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.OnDelete;

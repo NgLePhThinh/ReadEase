@@ -1,7 +1,7 @@
 package com.ReadEase.ReadEase.Controller.Document;
 
 
-import com.ReadEase.ReadEase.Controller.Document.Request.CreateDocReq;
+import com.ReadEase.ReadEase.Controller.Document.Request.DocumentReq;
 import com.ReadEase.ReadEase.Model.Document;
 import com.ReadEase.ReadEase.Model.Token;
 import com.ReadEase.ReadEase.Model.TokenType;
@@ -11,15 +11,11 @@ import com.ReadEase.ReadEase.Repo.TokenRepo;
 import com.ReadEase.ReadEase.Repo.UserRepo;
 import com.ReadEase.ReadEase.Service.DriveService;
 import com.google.api.client.auth.oauth2.TokenResponse;
-import com.google.api.services.drive.Drive;
 import com.google.gson.Gson;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.annotations.Parameter;
-import org.hibernate.mapping.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -33,7 +29,6 @@ import java.util.Set;
 public class DocumentController {
     private final DocumentRepo docRepo;
     private final UserRepo userRepo;
-
     private final TokenRepo tokenRepo;
     @GetMapping("/require-upload/{id}")
     public ResponseEntity<?> requireDriveAccessToken(@PathVariable("id") String userID) throws GeneralSecurityException, IOException {
@@ -57,37 +52,38 @@ public class DocumentController {
         Token finalToken = token;
         return new ResponseEntity<>(new HashMap<String, String>(){
             {
-                put("src token", finalToken.getToken());
-                put("decode token", decodeToken(finalToken.getToken()));
+//                put("src token", finalToken.getToken());
+                put("token", decodeToken(finalToken.getToken()));
             }
         },HttpStatus.OK);
     }
-
     private String decodeToken(String token) {
         char [] array = token.toCharArray();
-
         char temp = array[6];
         array[6] = array[9];
         array[9] = temp;
-
         return new String(array);
     }
 
 
-    @PostMapping("")
-    public ResponseEntity<?> createDocument(@RequestBody CreateDocReq req) {
-        User user = userRepo.findById(req.getUserID()).orElseThrow();
 
-        user.getDocuments().forEach( doc -> {
+    @PostMapping("/add")
+    public ResponseEntity<?> createDocument(@RequestBody DocumentReq req) {
+        User user = userRepo.findById(req.getUserID()).orElse(null);
+        if(user == null)
+            return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
+
+        for (Document doc: user.getDocuments()) {
             if(doc.getName().equals(req.getName())){
-                 new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tên tài liệu không được trùng");
+                return new ResponseEntity<>("The document name must not be duplicated.", HttpStatus.BAD_REQUEST);
             }
-        });
+        }
         Document doc = Document.builder()
                 .name(req.getName())
                 .url(req.getUrl())
+                .thumbnailLink(req.getThumbnailLink())
                 .size(req.getSize())
-                .totalPage(req.getTotalPages())
+                .totalPages(req.getTotalPages())
                 .createAt(new Date())
                 .lastRead(new Date())
                 .star(0)
@@ -97,6 +93,44 @@ public class DocumentController {
         user.getDocuments().add(doc);
         docRepo.save(doc);
         return new ResponseEntity<>(doc, HttpStatus.CREATED);
+    }
+    @PutMapping("/rename/{id}")
+    public ResponseEntity<?> renameDocument(@PathVariable("id") int docID,@RequestBody DocumentReq req){
+        Document doc = docRepo.findById(docID).orElse(null);
+        if(doc == null){
+            return new ResponseEntity<>("Not found document", HttpStatus.NOT_FOUND);
+        }
+
+        Set <String> names = docRepo.findDocumentNameByUserID(req.getUserID());
+        for (String name: names) {
+            if(name.equals(req.getName()))
+                return new ResponseEntity<>("The document name must not be duplicated.", HttpStatus.BAD_REQUEST);
+        }
+
+        doc.setName(req.getName());
+        docRepo.save(doc);
+        return new ResponseEntity<>("Rename successfully!!",HttpStatus.OK);
+    }
+    @PutMapping("/update")
+    public ResponseEntity<?> updateDocument(@RequestBody Document req){
+        Document doc = docRepo.findById(req.getID()).orElse(null);
+        if(doc == null){
+            return new ResponseEntity<>("Not found document", HttpStatus.NOT_FOUND);
+        }
+        doc.setNumberOfPagesReading(req.getNumberOfPagesReading());
+
+        docRepo.save(doc);
+
+        return new ResponseEntity<>("Update successfully!!",HttpStatus.OK);
+    }
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity <?> deleteDocument(@PathVariable("id") int ID){
+        Document doc = docRepo.findById(ID).orElse(null);
+        if(doc == null){
+            return new ResponseEntity<>("Not found document", HttpStatus.NOT_FOUND);
+        }
+        docRepo.delete(doc);
+        return new ResponseEntity<>("Ok",HttpStatus.OK);
     }
 
     @GetMapping("/get-all")

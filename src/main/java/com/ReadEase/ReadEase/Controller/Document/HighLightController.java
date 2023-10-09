@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/user/file/highlight")
@@ -21,19 +20,20 @@ public class HighLightController {
     private final DocumentRepo docRepo;;
     private final ColorRepo colorRepo;
     private final HighLightRepo highLightRepo;
-    @PostMapping("")
+    @PostMapping("/add")
     public ResponseEntity<?> createHighLight(@RequestBody HighLightReq req){
-        Color color =  colorRepo.findColorByColorHexCode(req.getColorHexCode())
-                .orElseThrow(
-                        () -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Can not find color by hex code")
-                );
+
+        Color color =  colorRepo.findColorByColorHexCode(req.getColorHexCode()).orElse(null);
+        if(color == null) return new ResponseEntity<>("Color not found",HttpStatus.NOT_FOUND);
+
+        Document doc = docRepo.findById(req.getDocID()).orElse(null);
+        if(doc == null) return new ResponseEntity<>("Document not found",HttpStatus.NOT_FOUND);
 
         HighLight res = HighLight.builder()
                 .color(color)
                 .position(req.getPosition())
                 .build();
 
-        Document doc = docRepo.findById(req.getDocID()).orElseThrow();
         doc.getHighLights().add(res);
         highLightRepo.save(res);
 
@@ -42,13 +42,13 @@ public class HighLightController {
 
     @PutMapping("/{id}")
     public ResponseEntity <?> updateHighLight(@PathVariable("id") int highLightID, @RequestBody HighLightReq req){
-        HighLight _highLight = highLightRepo.findById(highLightID).orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.BAD_REQUEST,"Not found note by id: " + highLightID)
-        );
-        Color color =  colorRepo.findColorByColorHexCode(req.getColorHexCode())
-                .orElseThrow(
-                        () -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Can not find color by hex code")
-                );
+
+        HighLight _highLight = highLightRepo.findById(highLightID).orElse(null);
+        if(_highLight == null) return new ResponseEntity<>("Highlight not found",HttpStatus.NOT_FOUND);
+
+        Color color =  colorRepo.findColorByColorHexCode(req.getColorHexCode()).orElse(null);
+        if(color == null) return new ResponseEntity<>("Color not found",HttpStatus.NOT_FOUND);
+
         _highLight.setColor(color);
         _highLight.setPosition(req.getPosition());
         return new ResponseEntity<> (highLightRepo.save(_highLight), HttpStatus.OK);

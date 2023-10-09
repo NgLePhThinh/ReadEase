@@ -39,7 +39,7 @@ public class Document {
     @Column(nullable = false)
     private float size;
     @Column(nullable = false)
-    private int totalPage;
+    private int totalPages;
     @Column(nullable = false)
     private Date lastRead;
     @Column(nullable = false)
