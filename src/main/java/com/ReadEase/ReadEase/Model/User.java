@@ -2,7 +2,6 @@ package com.ReadEase.ReadEase.Model;
 
 
 import com.ReadEase.ReadEase.Config.StringPrefixedSequenceIdGenerator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;

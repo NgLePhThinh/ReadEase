@@ -1,7 +1,6 @@
 package com.ReadEase.ReadEase.Repo;
 
 import com.ReadEase.ReadEase.Model.Note;
-import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;

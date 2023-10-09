@@ -1,7 +1,6 @@
 package com.ReadEase.ReadEase.Controller.User;
 
 import com.ReadEase.ReadEase.Repo.UserRepo;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

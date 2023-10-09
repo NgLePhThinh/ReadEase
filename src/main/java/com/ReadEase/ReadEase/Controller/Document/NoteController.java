@@ -5,12 +5,10 @@ import com.ReadEase.ReadEase.Model.Document;
 import com.ReadEase.ReadEase.Model.Note;
 import com.ReadEase.ReadEase.Repo.DocumentRepo;
 import com.ReadEase.ReadEase.Repo.NoteRepo;
-import com.google.gson.Gson;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/user/file/note")
