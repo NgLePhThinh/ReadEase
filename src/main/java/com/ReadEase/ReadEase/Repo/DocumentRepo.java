@@ -24,9 +24,7 @@ public interface DocumentRepo extends JpaRepository<Document, Integer> {
     @Query(value = "select count(*)  from user u, document c where u.ID = c.USER_ID and c.ID = ?1", nativeQuery = true)
     int existUserIDbyDocumentID(@Param("id") int docId);
 
-//    @Transactional
-//    @Modifying
-//    @Query(value = "insert into document values (?1,?2,?2,?3,?4,?5,?6,?7,?8)", nativeQuery = true)
-//   (USER_ID,lastRead,name,numberOfPagesReading,size,star,totalPage,url,ID)
-//    Set<Document> insertDocument(@Param("userID") String userID);
+    //returns Tìm tên tất cả document từ User.ID
+    @Query(value = "select d.name from user u, document d where u.ID = d.USER_ID and u.ID = ?1", nativeQuery = true)
+    Set<String> findDocumentNameByUserID(String userID);
 }

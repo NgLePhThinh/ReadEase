@@ -31,7 +31,7 @@ public class User implements UserDetails {
             name = "user_seq",
             strategy = "com.ReadEase.ReadEase.Config.StringPrefixedSequenceIdGenerator",
             parameters = {
-                @Parameter(name = StringPrefixedSequenceIdGenerator.INCREMENT_PARAM, value = "50"),
+                @Parameter(name = StringPrefixedSequenceIdGenerator.INCREMENT_PARAM, value = "1"),
                 @Parameter(name = StringPrefixedSequenceIdGenerator.VALUE_PREFIX_PARAMETER, value = "RE"),
                 @Parameter(name = StringPrefixedSequenceIdGenerator.NUMBER_FORMAT_PARAMETER, value = "%06d") })
 
@@ -104,7 +104,7 @@ public class User implements UserDetails {
     }
 
     public Set<Document> getDocumentCustom(int skip, int limit){
-        return  documents.stream()
+        return  getDocumentsSortedByLastReadDesc().stream()
                 .skip(skip)
                 .limit(limit)
                 .collect(Collectors.toSet());
@@ -118,6 +118,20 @@ public class User implements UserDetails {
 
         return latestDocument.orElse(null);
     }
+
+
+    public void addCollection(Collection collection){
+        this.collections.add(collection);
+    }
+    public void removeCollection(int  collectionID){
+        this.collections.stream()
+                .filter(c -> c.getID() == collectionID).findFirst()
+                .ifPresent(col -> this.collections.remove(col));
+    }
+
+
+
+    //region User Detail
 
     @Override
     public java.util.Collection<? extends GrantedAuthority> getAuthorities() {
@@ -148,4 +162,7 @@ public class User implements UserDetails {
     public boolean isEnabled() {
         return true;
     }
+    //endregion
+
+
 }

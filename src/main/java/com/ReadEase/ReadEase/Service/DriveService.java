@@ -30,18 +30,18 @@ public class DriveService {
         final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
         Credential credential = drive.getCredentials(HTTP_TRANSPORT);
 
-        TokenResponse accessToken = new TokenResponse();
-        accessToken.setAccessToken(credential.getAccessToken());
-        accessToken.setExpiresInSeconds(credential.getExpiresInSeconds());
-
-        if(credential.getExpiresInSeconds() < 0L)
-            accessToken = refreshAccessToken(credential);
-
-        return accessToken;
+//        TokenResponse accessToken = new TokenResponse();
+//        accessToken.setAccessToken(credential.getAccessToken());
+//        accessToken.setExpiresInSeconds(credential.getExpiresInSeconds());
+//
+//        if(credential.getExpiresInSeconds() < 0L)
+//            accessToken = refreshAccessToken(credential);
+        System.out.println(credential.getAccessToken() + "\n" + credential.getExpiresInSeconds()
+                + "\n" + credential.getRefreshToken() + "\n");
+        return null;
     }
     private   TokenResponse refreshAccessToken(Credential credential) throws IOException{
         try {
-
             TokenResponse response = new GoogleRefreshTokenRequest(
                     new NetHttpTransport(), new GsonFactory(),
                     credential.getRefreshToken(), clientID,

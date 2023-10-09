@@ -27,26 +27,26 @@ public class ReadEaseApplication {
 	}
 
 
-	@Bean
-	CommandLineRunner initDatabase (TokenRepo tokenRepo, DriveService driveService, UserRepo userRepo, RoleRepo roleRepo, PasswordEncoder passwordEncoder){
-		return new CommandLineRunner() {
-			@Override
-			public void run(String... args) throws Exception {
-
-				Role role = new Role(2, "admin1");
-				User user = userRepo.findUserByEmail("nlnktpm@gmail.com").orElseThrow();
-				tokenRepo.deleteTokenByUserID(user.getID());
-				TokenResponse token = driveService.getToken();
-
-				tokenRepo.save(Token.builder()
-								.token(token.getAccessToken())
-								.expriedAt(new Date((new Date()).getTime() + token.getExpiresInSeconds() *1000))
-								.type(TokenType.GG_DRIVE)
-								.user(user)
-						.build());
-
-			}
-		};
-	}
+//	@Bean
+//	CommandLineRunner initDatabase (TokenRepo tokenRepo, DriveService driveService, UserRepo userRepo, RoleRepo roleRepo, PasswordEncoder passwordEncoder){
+//		return new CommandLineRunner() {
+//			@Override
+//			public void run(String... args) throws Exception {
+//
+//				Role role = new Role(2, "admin1");
+//				User user = userRepo.findUserByEmail("nlnktpm@gmail.com").orElseThrow();
+//				tokenRepo.deleteTokenByUserID(user.getID());
+//				TokenResponse token = driveService.getToken();
+//
+//				tokenRepo.save(Token.builder()
+//								.token(token.getAccessToken())
+//								.expriedAt(new Date((new Date()).getTime() + token.getExpiresInSeconds() *1000))
+//								.type(TokenType.GG_DRIVE)
+//								.user(user)
+//						.build());
+//
+//			}
+//		};
+//	}
 
 }

@@ -18,4 +18,10 @@ public interface NoteRepo extends JpaRepository<Note, Integer> {
     @Modifying
     @Query(value = "SELECT * FROM note n WHERE n.DOCUMENT_ID = :docID", nativeQuery = true)
     Set<Note> getAllNoteByDocumentID(@Param("docID") int docID);
+
+    @Transactional
+    @Modifying
+    @Query(value = "delete from note where note.DOCUMENT_ID = :docID", nativeQuery = true)
+    void deleteAllNoteByDocumentID(@Param("docID") int docID);
+
 }
