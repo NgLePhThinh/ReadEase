@@ -29,10 +29,6 @@ public class Collection {
             inverseJoinColumns = @JoinColumn(name = "DOCUMENT_ID")
     )
     private Set<Document> documents = new HashSet<>();
-//    @ManyToOne
-//    @JoinColumn(name="USER_ID", nullable = false)
-//    @OnDelete(action =  OnDeleteAction.CASCADE)
-//    private User user;
 
     public void addDocument(Document document){
         this.documents.add(document);

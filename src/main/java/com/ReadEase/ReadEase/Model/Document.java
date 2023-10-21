@@ -3,8 +3,6 @@ package com.ReadEase.ReadEase.Model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 
 import java.util.Date;
 import java.util.Set;
@@ -25,7 +23,7 @@ import java.util.Set;
 public class Document {
     @Id
     @GeneratedValue
-    private int ID;
+    private long ID;
     @Column(nullable = false)
     private String name;
     @Column(nullable = false)
@@ -44,17 +42,9 @@ public class Document {
     private Date lastRead;
     @Column(nullable = false)
     private Date createAt;
-    @OneToMany
-    @JoinColumn(name = "DOCUMENT_ID", nullable = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    private Set<Note> notes;
-
-    @OneToMany
-    @JoinColumn(name = "DOCUMENT_ID", nullable = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    private Set<HighLight> highLights;
 
 
+//    private Set<Annotation> annotations;
     @ManyToMany(fetch = FetchType.LAZY,
             cascade = {
                     CascadeType.PERSIST,

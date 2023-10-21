@@ -24,6 +24,7 @@ public class CollectionController {
     private final UserRepo userRepo;
     @GetMapping("/{id}")
     public ResponseEntity<?> getCollectionByID(@PathVariable("") int id){
+
         return new ResponseEntity<>(colRepo.findById(id),HttpStatus.OK);
     }
     @PostMapping("")
@@ -45,7 +46,7 @@ public class CollectionController {
         return new ResponseEntity<>("Create collection successfully!!!",HttpStatus.CREATED);
     }
     @PutMapping("/{colId}/add-document/{docId}")
-    public ResponseEntity<?> addDocumentIntoCollection(@PathVariable("colId") int colID,@PathVariable("docId") int docID){
+    public ResponseEntity<?> addDocumentIntoCollection(@PathVariable("colId") int colID,@PathVariable("docId") long docID){
 
         Document doc = docRepo.findById(docID).orElse(null);
         Collection collection = colRepo.findById(colID).orElse(null);
@@ -79,7 +80,6 @@ public class CollectionController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteCollection(@PathVariable("id") int colID){
         colRepo.deleteById(colID);
-
         return new ResponseEntity<>("Delete collection successfully!!!",HttpStatus.CREATED);
     }
 

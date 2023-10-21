@@ -19,7 +19,7 @@ public interface CollectionRepo extends JpaRepository<Collection, Integer> {
     @Transactional
     @Modifying
     @Query(value = "insert into collection_document (COLLECTION_ID,DOCUMENT_ID) values (?1,?2)", nativeQuery = true)
-    void addDocumentIntoCollection( int colId,int docId);
+    void addDocumentIntoCollection( int colId,long docId);
 
     //returns Tìm tên tất cả collection từ User.ID
     @Query(value = "select c.name from user u, collection c where u.ID = c.USER_ID and u.ID = ?1", nativeQuery = true)
