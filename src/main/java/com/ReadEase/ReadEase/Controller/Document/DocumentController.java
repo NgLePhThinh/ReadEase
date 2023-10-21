@@ -6,12 +6,12 @@ import com.ReadEase.ReadEase.Model.Document;
 import com.ReadEase.ReadEase.Model.Token;
 import com.ReadEase.ReadEase.Model.TokenType;
 import com.ReadEase.ReadEase.Model.User;
+import com.ReadEase.ReadEase.Repo.AnnotationRepo;
 import com.ReadEase.ReadEase.Repo.DocumentRepo;
 import com.ReadEase.ReadEase.Repo.TokenRepo;
 import com.ReadEase.ReadEase.Repo.UserRepo;
 import com.ReadEase.ReadEase.Service.DriveService;
 import com.google.api.client.auth.oauth2.TokenResponse;
-import com.google.gson.Gson;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +30,16 @@ public class DocumentController {
     private final DocumentRepo docRepo;
     private final UserRepo userRepo;
     private final TokenRepo tokenRepo;
+    private final AnnotationRepo annotationRepo;
+    @GetMapping("/{userID}")
+    public ResponseEntity<?> getAllDocuments(@PathVariable("userID") String userID,
+                                             @RequestParam("page") int page, @RequestParam("size") int size ){
+        User user = userRepo.findById(userID).orElse(null);
+        if(user == null)
+            return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
+
+        return new ResponseEntity<>(user.getDocumentCustom((page -1) *size,size),HttpStatus.OK);
+    }
     @GetMapping("/require-upload/{id}")
     public ResponseEntity<?> requireDriveAccessToken(@PathVariable("id") String userID) throws GeneralSecurityException, IOException {
         var user = userRepo.existsById(userID);
@@ -65,8 +75,13 @@ public class DocumentController {
         return new String(array);
     }
 
-
-
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getDocumentAtPageNumberWithSize(@PathVariable("id") String userID, @RequestParam("page") int page,@RequestParam("size") int size){
+        User user = userRepo.findById(userID).orElse(null);
+        if(user == null)
+            return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
+        return  new ResponseEntity<>(user.getDocumentCustom((page-1)*size,size),HttpStatus.OK);
+    }
     @PostMapping("/add")
     public ResponseEntity<?> createDocument(@RequestBody DocumentReq req) {
         User user = userRepo.findById(req.getUserID()).orElse(null);
@@ -86,16 +101,17 @@ public class DocumentController {
                 .totalPages(req.getTotalPages())
                 .createAt(new Date())
                 .lastRead(new Date())
-                .star(0)
+                .star(-1)
                 .numberOfPagesReading(0)
                 .build();
-
+        user.setTotalCapacity(user.getTotalCapacity() + doc.getSize());
         user.getDocuments().add(doc);
+        userRepo.save(user);
         docRepo.save(doc);
         return new ResponseEntity<>(doc, HttpStatus.CREATED);
     }
     @PutMapping("/rename/{id}")
-    public ResponseEntity<?> renameDocument(@PathVariable("id") int docID,@RequestBody DocumentReq req){
+    public ResponseEntity<?> renameDocument(@PathVariable("id") long docID,@RequestBody DocumentReq req){
         Document doc = docRepo.findById(docID).orElse(null);
         if(doc == null){
             return new ResponseEntity<>("Not found document", HttpStatus.NOT_FOUND);
@@ -123,25 +139,35 @@ public class DocumentController {
 
         return new ResponseEntity<>("Update successfully!!",HttpStatus.OK);
     }
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity <?> deleteDocument(@PathVariable("id") int ID){
+    @PutMapping("/update-star/{docID}")
+    public ResponseEntity<?> updateDocumentStar(@PathVariable("docID") long docID, @RequestParam("star") int star){
+        Document doc = docRepo.findById(docID).orElse(null);
+        if(doc == null){
+            return new ResponseEntity<>("Not found document", HttpStatus.NOT_FOUND);
+        }
+        doc.setStar(star);
+        docRepo.save(doc);
+        return new ResponseEntity<>("Update star successfully!!",HttpStatus.OK);
+    }
+
+    @DeleteMapping("/delete")
+    public ResponseEntity <?> deleteDocument(@RequestParam("userID") String userID, @RequestParam("ID") long ID){
+        User user = userRepo.findById(userID).orElse(null);
+        if(user == null)
+            return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
         Document doc = docRepo.findById(ID).orElse(null);
         if(doc == null){
             return new ResponseEntity<>("Not found document", HttpStatus.NOT_FOUND);
         }
+        //Trigger annotation
+        annotationRepo.deleteAnnotationsByDocumentId(ID);
+        user.setTotalCapacity(user.getTotalCapacity() - doc.getSize());
+        user.getDocuments().add(doc);
+        userRepo.save(user);
         docRepo.delete(doc);
         return new ResponseEntity<>("Ok",HttpStatus.OK);
     }
 
-    @GetMapping("/get-all")
-    public ResponseEntity<?> getAllDocuments(@RequestBody String req){
-//        Set<Document> documentSet = docRepo.getAllDocumentsUserID(user.getID());
-        Gson gson = new Gson();
-        User user = gson.fromJson(req, User.class);
-        User _user = userRepo.findById(user.getID()).orElseThrow();
-        System.out.println(_user.toString());
-        Set<Document> documents = docRepo.getAllDocumentsUserID(_user.getID());
-        return new ResponseEntity<>(gson.toJson(documents),HttpStatus.OK);
-    }
+
 
 }

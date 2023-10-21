@@ -4,12 +4,14 @@ import com.ReadEase.ReadEase.Config.GeneratePassword;
 import com.ReadEase.ReadEase.Config.JwtService;
 import com.ReadEase.ReadEase.Controller.User.Request.SignUpRequest;
 import com.ReadEase.ReadEase.Controller.User.Response.AuthResponse;
+import com.ReadEase.ReadEase.Model.Role;
 import com.ReadEase.ReadEase.Model.Token;
 import com.ReadEase.ReadEase.Model.TokenType;
 import com.ReadEase.ReadEase.Model.User;
 import com.ReadEase.ReadEase.Repo.RoleRepo;
 import com.ReadEase.ReadEase.Repo.TokenRepo;
 import com.ReadEase.ReadEase.Repo.UserRepo;
+import com.ReadEase.ReadEase.Service.DriveService;
 import com.ReadEase.ReadEase.Service.EmailService;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.Cookie;
@@ -22,6 +24,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.time.Duration;
 import java.util.Date;
 
@@ -41,24 +45,21 @@ public class AuthController {
     private final JwtService jwtService;
     private final TokenRepo tokenRepo;
 
+    private final DriveService driveService;
+
 
     @PostMapping("/signup")
-    public ResponseEntity<?> signUp(@RequestBody SignUpRequest req) {
+    public ResponseEntity<?> signUp(@RequestBody User req) throws GeneralSecurityException, IOException {
         if (userRepo.countUserByEmail(req.getEmail()) == 1)
             return new ResponseEntity<>("Email already exists!!!", HttpStatus.BAD_REQUEST);
 
-        User newUser = roleRepo.findById(1).map(role -> {
-            User user = new User(req.getEmail(), passwordEncoder.encode(req.getPassword()), role);
-            return userRepo.save(user);
-        }).orElseThrow();
-
-        AuthResponse res = AuthResponse.builder()
-                .userID(newUser.getID())
-                .email(newUser.getEmail())
-                .avatar(newUser.getAvatar())
-                .build();
-
-        return new ResponseEntity<>(res, HttpStatus.CREATED);
+        Role role = roleRepo.findById(1).orElseThrow();
+        User user = new User(req.getEmail(), passwordEncoder.encode(req.getPassword()), role,req.getTargetLanguage());
+        userRepo.save(user);
+        String folderID = driveService.createFolder(user.getID());
+        user.setIdDriveFolder(folderID);
+        userRepo.save(user);
+        return new ResponseEntity<>("Sign up successfully!!", HttpStatus.CREATED);
     }
     @PostMapping("/login")
     public ResponseEntity<?> loginWithGoogle(@Nonnull HttpServletResponse response,@RequestBody User req){
@@ -68,7 +69,7 @@ public class AuthController {
             GeneratePassword generatePassword = new GeneratePassword();
             String pwd = generatePassword.generateStrongPassword(8);
             user = roleRepo.findById(1).map(role -> {
-                User _user = new User(req.getEmail(), passwordEncoder.encode(pwd), role);
+                User _user = new User(req.getEmail(), passwordEncoder.encode(pwd), role,req.getTargetLanguage());
                 _user.setAvatar(req.getAvatar());
                 return userRepo.save(_user);
             }).orElseThrow();
@@ -141,6 +142,9 @@ public class AuthController {
                 .email(user.getEmail())
                 .avatar(user.getAvatar())
                 .token(jwtToken)
+                .totalDocument(user.getDocuments().size())
+                .targetLanguage(user.getTargetLanguage())
+                .idDriveFolder(user.getIdDriveFolder())
                 .currentDocumentReading(user.getLastReadingDocument())
                 .collections(user.getCollections())
                 .documents(user.getDocumentCustom(0,10))
@@ -211,6 +215,7 @@ public class AuthController {
 
 
     private void saveUserToken(User user, String jwt, TokenType tokenType) {
+        System.out.println(new Date().getTime() + "\n" + getExpiration(tokenType));
         tokenRepo.save(Token.builder()
                 .user(user)
                 .expriedAt(new Date(new Date().getTime() + getExpiration(tokenType)))
@@ -229,11 +234,16 @@ public class AuthController {
         return false;
     }
 
+    @Value("${application.security.jwt.expiration}")
+    private long  accessTokenExpiration;
+    @Value("${application.security.jwt.refresh-token.expiration}")
+    private long refreshTokenExpiration;
+    @Value("${application.security.jwt.expiration-reset-password}")
+    private  long resetPasswordExpiration;
     private long getExpiration(TokenType tokenType) {
-        JwtService jwtService = new JwtService();
-        return tokenType == TokenType.ACCESS ? jwtService.getAccessTokenExpiration()
-                : tokenType == TokenType.REFRESH ? jwtService.getRefreshTokenExpiration()
-                : jwtService.getResetPasswordExpiration();
+        return tokenType == TokenType.ACCESS ?  accessTokenExpiration
+                : tokenType == TokenType.REFRESH ? refreshTokenExpiration
+                :resetPasswordExpiration;
     }
 
 

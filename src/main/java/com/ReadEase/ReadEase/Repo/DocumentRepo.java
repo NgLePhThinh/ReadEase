@@ -11,13 +11,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Set;
 
 @Repository
-public interface DocumentRepo extends JpaRepository<Document, Integer> {
-
-    @Transactional
-    @Modifying
-    @Query(value = "SELECT * FROM document d WHERE d.USER_ID = :userID", nativeQuery = true)
-    Set<Document> getAllDocumentsUserID(@Param("userID") String userID);
-
+public interface DocumentRepo extends JpaRepository<Document, Long> {
 
 //    @Transactional
 //    @Modifying
@@ -27,4 +21,5 @@ public interface DocumentRepo extends JpaRepository<Document, Integer> {
     //returns Tìm tên tất cả document từ User.ID
     @Query(value = "select d.name from user u, document d where u.ID = d.USER_ID and u.ID = ?1", nativeQuery = true)
     Set<String> findDocumentNameByUserID(String userID);
+
 }

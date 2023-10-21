@@ -2,6 +2,10 @@ server:
   port: ${SERVER_PORT:8080}
 
 spring:
+  data:
+    mongodb:
+      uri: mongodb+srv://nlnktpm:vTJf1PgQQJFUxo2v@cluster0.79i259f.mongodb.net/?retryWrites=true&w=majority
+      database: readease
   profiles:
     active: ${ACTIVE_PROFILE:dev}
   main:

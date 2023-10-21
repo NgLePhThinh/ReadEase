@@ -33,7 +33,7 @@ public interface UserRepo extends JpaRepository<User, String> {
     @Transactional
     @Modifying
     @Query(value = "UPDATE user u SET u.password = :pwd WHERE u.email = :email ", nativeQuery = true)
-    int updatePasswordByEmail(@Param("email") String email, @Param("pwd") String pwd);
+    void updatePasswordByEmail(@Param("email") String email, @Param("pwd") String pwd);
 
     @Query(value = "SELECT count(*) FROM user u where u.email = ?1", nativeQuery = true)
     int countUserByEmail(String email);

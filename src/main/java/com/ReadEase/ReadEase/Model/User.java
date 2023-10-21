@@ -48,9 +48,14 @@ public class User implements UserDetails {
     private Date createAt;
     @Column(nullable = false)
     private long totalAccessTime;
+    @Column(nullable = false)
+    private float totalCapacity;
 
     @Column(nullable = false)
-    private int totalCapacity;
+    private String targetLanguage;
+
+    @Column(nullable = false)
+    private String idDriveFolder;
 
     @ManyToOne
     @JoinColumn(name = "ROLE_ID",nullable = false)
@@ -66,7 +71,7 @@ public class User implements UserDetails {
     @OnDelete(action =  OnDeleteAction.CASCADE)
     private Set<Collection> collections;
 
-    public User(String email, String password, Role role) {
+    public User(String email, String password, Role role, String targetLanguage) {
         this.email = email;
         this.password = password;
         this.avatar = "";
@@ -74,6 +79,8 @@ public class User implements UserDetails {
         this.createAt = new Date();
         this.totalAccessTime = 0;
         this.role = role;
+        this.idDriveFolder = "";
+        this.targetLanguage = "";
     }
     public User(String ID){
         this.ID = ID;

@@ -18,8 +18,8 @@ import java.util.Date;
 )
 public class Token {
     @Id
-    @GeneratedValue
-    private int id;
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    private long id;
     private String token;
     private Date expriedAt;
     @Enumerated(EnumType.STRING)

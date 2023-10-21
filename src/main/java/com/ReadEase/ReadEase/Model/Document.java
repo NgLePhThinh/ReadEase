@@ -25,7 +25,7 @@ import java.util.Set;
 public class Document {
     @Id
     @GeneratedValue
-    private int ID;
+    private long ID;
     @Column(nullable = false)
     private String name;
     @Column(nullable = false)
@@ -44,17 +44,9 @@ public class Document {
     private Date lastRead;
     @Column(nullable = false)
     private Date createAt;
-    @OneToMany
-    @JoinColumn(name = "DOCUMENT_ID", nullable = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    private Set<Note> notes;
-
-    @OneToMany
-    @JoinColumn(name = "DOCUMENT_ID", nullable = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    private Set<HighLight> highLights;
 
 
+//    private Set<Annotation> annotations;
     @ManyToMany(fetch = FetchType.LAZY,
             cascade = {
                     CascadeType.PERSIST,

@@ -20,4 +20,7 @@ public class AuthResponse {
     private Document currentDocumentReading;
     private Set<Document> documents;
     private Set<Collection> collections;
+    private int totalDocument;
+    private String targetLanguage;
+    private String idDriveFolder;
 }

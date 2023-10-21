@@ -6,14 +6,24 @@ import com.google.api.client.auth.oauth2.TokenResponse;
 import com.google.api.client.auth.oauth2.TokenResponseException;
 import com.google.api.client.googleapis.auth.oauth2.GoogleRefreshTokenRequest;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
+import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
+import com.google.api.services.drive.Drive;
+import com.google.api.services.drive.DriveScopes;
+import com.google.auth.http.HttpCredentialsAdapter;
+import com.google.auth.oauth2.GoogleCredentials;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+
+import com.google.api.services.drive.model.File;
+
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.Arrays;
 
 
 @Component
@@ -61,5 +71,23 @@ public class DriveService {
         }
         return null;
 
+    }
+
+    public String createFolder(String userID) throws GeneralSecurityException,  IOException{
+        File fileMetadata = new File();
+//        fileMetadata.setParents(Arrays.asList(parent));
+        System.out.println(userID);
+        fileMetadata.setName(userID);
+//        fileMetadata.setDriveId(DRIVE_ID);
+        fileMetadata.setMimeType("application/vnd.google-apps.folder");
+
+
+        DriveConfig driveConfig = new DriveConfig();
+        Drive drive = driveConfig.getInstance();
+        File file = drive.files().create(fileMetadata)
+                .setSupportsAllDrives(true)
+                .setFields("id")
+                .execute();
+        return file.getId();
     }
 }
