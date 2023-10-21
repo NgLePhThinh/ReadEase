@@ -2,7 +2,6 @@ package com.ReadEase.ReadEase.Controller.User;
 
 import com.ReadEase.ReadEase.Config.GeneratePassword;
 import com.ReadEase.ReadEase.Config.JwtService;
-import com.ReadEase.ReadEase.Controller.User.Request.SignUpRequest;
 import com.ReadEase.ReadEase.Controller.User.Response.AuthResponse;
 import com.ReadEase.ReadEase.Model.Role;
 import com.ReadEase.ReadEase.Model.Token;
