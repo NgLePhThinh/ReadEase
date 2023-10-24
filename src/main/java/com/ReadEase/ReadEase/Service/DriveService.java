@@ -8,6 +8,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleRefreshTokenRequest;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.HttpRequestInitializer;
+import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.services.drive.Drive;
@@ -25,14 +26,16 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 
 
-@Component
+
 @Service
-@RequiredArgsConstructor
+
 public class DriveService {
-    @Value("${application.drive-api.client-id}")
-    private String  clientID;
-    @Value("${application.drive-api.client-secret}")
-    private String clientSecret;
+//    @Value("${application.drive-api.client-id}")
+//    @Value("${CLIENT_ID}")
+    private String  clientID = "726593784919-cqfv8c53np0li2n3d3eb3soens15ui0u.apps.googleusercontent.com";
+//    @Value("${application.drive-api.client-secret}")
+//    @Value("${CLIENT_SECRET}")
+    private String clientSecret = "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";
     public TokenResponse getToken() throws GeneralSecurityException,  IOException {
         DriveConfig drive = new DriveConfig();
         final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
@@ -43,17 +46,17 @@ public class DriveService {
        accessToken.setExpiresInSeconds(credential.getExpiresInSeconds());
 
        if(credential.getExpiresInSeconds() < 0L)
-           accessToken = refreshAccessToken(credential);
+           accessToken = refreshAccessToken(credential, HTTP_TRANSPORT);
 
         return accessToken;
     }
-    private   TokenResponse refreshAccessToken(Credential credential) throws IOException{
+    private   TokenResponse refreshAccessToken(Credential credential, HttpTransport transport) throws IOException{
         try {
+            System.out.println(clientID +"\n" + clientSecret);
             TokenResponse response = new GoogleRefreshTokenRequest(
-                    new NetHttpTransport(), new GsonFactory(),
+                   transport, new GsonFactory(),
                     credential.getRefreshToken(), clientID,
                     clientSecret).execute();
-
             return response;
         }catch (TokenResponseException e) {
             if (e.getDetails() != null) {

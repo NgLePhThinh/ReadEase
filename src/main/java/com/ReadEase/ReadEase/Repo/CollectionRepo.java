@@ -21,6 +21,12 @@ public interface CollectionRepo extends JpaRepository<Collection, Integer> {
     @Query(value = "insert into collection_document (COLLECTION_ID,DOCUMENT_ID) values (?1,?2)", nativeQuery = true)
     void addDocumentIntoCollection( int colId,long docId);
 
+    @Transactional
+    @Modifying
+//    @Query(value = "insert into collection_document (COLLECTION_ID,DOCUMENT_ID) values (?1,?2)", nativeQuery = true)
+    @Query(value = "delete from  collection_document where COLLECTION_ID = ?1 and DOCUMENT_ID ?2 ", nativeQuery = true)
+    void removeDocumentIntoCollection( int colId,long docId);
+
     //returns Tìm tên tất cả collection từ User.ID
     @Query(value = "select c.name from user u, collection c where u.ID = c.USER_ID and u.ID = ?1", nativeQuery = true)
     Set<String> findCollectionNameByUserID(String userID);

@@ -80,7 +80,7 @@ public class User implements UserDetails {
         this.totalAccessTime = 0;
         this.role = role;
         this.idDriveFolder = "";
-        this.targetLanguage = "";
+        this.targetLanguage = targetLanguage;
     }
     public User(String ID){
         this.ID = ID;

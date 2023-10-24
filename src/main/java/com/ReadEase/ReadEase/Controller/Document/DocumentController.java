@@ -40,7 +40,8 @@ public class DocumentController {
 
         return new ResponseEntity<>(user.getDocumentCustom((page -1) *size,size),HttpStatus.OK);
     }
-    @GetMapping("/require-upload/{id}")
+
+    @GetMapping("/required-upload/{id}")
     public ResponseEntity<?> requireDriveAccessToken(@PathVariable("id") String userID) throws GeneralSecurityException, IOException {
         var user = userRepo.existsById(userID);
         if(!user)
@@ -50,14 +51,17 @@ public class DocumentController {
         if(token.getExpriedAt().before(new Date())){
             DriveService driveService = new DriveService();
             TokenResponse tokenResponse = driveService.getToken();
-            token = Token.builder()
-                    .type(token.getType())
-                    .user(token.getUser())
-                    .token(tokenResponse.getAccessToken())
-                    .expriedAt(new Date((new Date()).getTime() + tokenResponse.getExpiresInSeconds() *1000 - 10000))
-                    .build();
+//            token = Token.builder()
+//                    .type(token.getType())
+//                    .user(token.getUser())
+//                    .token(tokenResponse.getAccessToken())
+//                    .expriedAt(new Date((new Date()).getTime() + tokenResponse.getExpiresInSeconds() *1000 - 10000))
+//                    .build();
+            token.setToken(tokenResponse.getAccessToken());
+            token.setExpriedAt(new Date((new Date()).getTime() + tokenResponse.getExpiresInSeconds() *1000 - 10000));
             tokenRepo.save(token);
         }
+
         decodeToken(token.getToken());
         Token finalToken = token;
         return new ResponseEntity<>(new HashMap<String, String>(){
@@ -82,6 +86,7 @@ public class DocumentController {
             return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
         return  new ResponseEntity<>(user.getDocumentCustom((page-1)*size,size),HttpStatus.OK);
     }
+
     @PostMapping("/add")
     public ResponseEntity<?> createDocument(@RequestBody DocumentReq req) {
         User user = userRepo.findById(req.getUserID()).orElse(null);

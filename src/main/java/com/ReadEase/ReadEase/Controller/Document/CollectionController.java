@@ -24,7 +24,6 @@ public class CollectionController {
     private final UserRepo userRepo;
     @GetMapping("/{id}")
     public ResponseEntity<?> getCollectionByID(@PathVariable("") int id){
-
         return new ResponseEntity<>(colRepo.findById(id),HttpStatus.OK);
     }
     @PostMapping("")
@@ -59,6 +58,21 @@ public class CollectionController {
 
         return new ResponseEntity<>(collection, HttpStatus.OK);
     }
+    @DeleteMapping("/{colId}/add-document/{docId}")
+    public ResponseEntity<?> removeDocumentIntoCollection(@PathVariable("colId") int colID,@PathVariable("docId") long docID){
+
+        Document doc = docRepo.findById(docID).orElse(null);
+        Collection collection = colRepo.findById(colID).orElse(null);
+        if(doc == null || collection == null)
+            return new ResponseEntity<>("Request Invalid", HttpStatus.BAD_REQUEST);
+
+        collection.removeDocument(docID);
+        doc.getCollections().remove(collection);
+        colRepo.removeDocumentIntoCollection(colID, docID);
+
+        return new ResponseEntity<>(collection, HttpStatus.OK);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<?> renameCollection(@PathVariable("id") int colID,@RequestBody CollectionReq req){
         Collection _col = colRepo.findById(colID).orElse(null);

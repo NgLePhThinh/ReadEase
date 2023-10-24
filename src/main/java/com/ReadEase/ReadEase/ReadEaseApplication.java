@@ -14,7 +14,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 // import org.springframework.context.annotation.Bean;
 // import org.springframework.security.crypto.password.PasswordEncoder;
-
+//
 // import java.util.Date;
 
 
@@ -34,16 +34,18 @@ public class ReadEaseApplication {
 //			public void run(String... args) throws Exception {
 //
 //				Role role = new Role(2, "admin1");
-//				User user = userRepo.findUserByEmail("nlnktpm@gmail.com").orElseThrow();
-//				tokenRepo.deleteTokenByUserID(user.getID());
-//				TokenResponse token = driveService.getToken();
-//
-//				tokenRepo.save(Token.builder()
-//								.token(token.getAccessToken())
-//								.expriedAt(new Date((new Date()).getTime() + token.getExpiresInSeconds() *1000))
-//								.type(TokenType.GG_DRIVE)
-//								.user(user)
-//						.build());
+//				User admin1 = new User("nlnktpm@gmail.com", passwordEncoder.encode("Aa!12345"),role,"" );
+//				userRepo.save(admin1);
+////				User user = userRepo.findUserByEmail("nlnktpm@gmail.com").orElseThrow();
+////				tokenRepo.deleteTokenByUserID(user.getID());
+////				TokenResponse token = driveService.getToken();
+////
+////				tokenRepo.save(Token.builder()
+////								.token(token.getAccessToken())
+////								.expriedAt(new Date((new Date()).getTime() + token.getExpiresInSeconds() *1000))
+////								.type(TokenType.GG_DRIVE)
+////								.user(user)
+////						.build());
 //
 //			}
 //		};

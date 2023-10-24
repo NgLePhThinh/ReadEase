@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.time.Duration;
 import java.util.Date;
-
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -97,6 +96,9 @@ public class AuthController {
                 .avatar(user.getAvatar())
                 .token(jwtToken)
                 .build();
+
+
+
         if(!isFirstLogin){
             res.setCurrentDocumentReading(user.getLastReadingDocument());
             res.setCollections(user.getCollections());
@@ -118,7 +120,7 @@ public class AuthController {
 
         User user = userRepo.findUserByEmail(req.getEmail()).orElseThrow();
         if (!passwordEncoder.matches(req.getPassword(), user.getPassword()))
-            return new ResponseEntity<>("Password is not valid", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Password is not valid", HttpStatus.NOT_ACCEPTABLE);
 
         String jwtToken = jwtService.generateToken(user);
 

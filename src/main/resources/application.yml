@@ -1,6 +1,12 @@
 server:
-  port: ${SERVER_PORT:8080}
-
+  port: 8080
+#web:
+#  cors:
+#    allowed-origins: http://localhost:3000
+#    allowed-methods: GET, POST, PATCH, PUT, DELETE, OPTIONS, HEAD
+#    max-age: 3600
+#    allowed-headers: Content-Type, X-Requested-With, accept, Origin, Access-Control-Request-Method,  Access-Control-Request-Headers
+#    exposed-headers: Access-Control-Allow-Origin
 spring:
   data:
     mongodb:
