@@ -46,29 +46,21 @@ public class DocumentController {
     }
 
     @GetMapping("/required-upload")
-    public ResponseEntity<?> requireDriveAccessToken(@PathVariable("id") String userID) throws GeneralSecurityException, IOException {
+    public ResponseEntity<?> requireDriveAccessToken() throws GeneralSecurityException, IOException {
         Token token = tokenRepo.findGGToken(TokenType.GG_DRIVE.toString()).orElseThrow();
 
+        //Kiem tra access token het han
         if(token.getExpriedAt().before(new Date())){
             DriveService driveService = new DriveService();
             TokenResponse tokenResponse = driveService.getToken();
-//            token = Token.builder()
-//                    .type(token.getType())
-//                    .user(token.getUser())
-//                    .token(tokenResponse.getAccessToken())
-//                    .expriedAt(new Date((new Date()).getTime() + tokenResponse.getExpiresInSeconds() *1000 - 10000))
-//                    .build();
             token.setToken(tokenResponse.getAccessToken());
             token.setExpriedAt(new Date((new Date()).getTime() + tokenResponse.getExpiresInSeconds() *1000 - 10000));
             tokenRepo.save(token);
         }
 
-        decodeToken(token.getToken());
-        Token finalToken = token;
         return new ResponseEntity<>(new HashMap<String, String>(){
             {
-//                put("src token", finalToken.getToken());
-                put("token", decodeToken(finalToken.getToken()));
+                put("token", decodeToken(token.getToken()));
             }
         },HttpStatus.OK);
     }
@@ -91,11 +83,14 @@ public class DocumentController {
              @RequestParam("collectionID") int colID){
         String userID = tokenService.getUserID(request);
         List<Object[]> documentCustom = new ArrayList<>();
+        System.out.println(name);
         if(colID == 0){//Trường hợp không truy vấn document theo Collection
             documentCustom = docRepo.findDocumentCustom1( userID, (page -1)*size,size,sortBy,sortBy, name);
+
+//            return  new ResponseEntity<>(docRepo.findDocumentByName(name,userID),HttpStatus.OK);
         }
         else {
-            documentCustom = docRepo.findDocumentCustomByColID( userID, (page -1)*size,size,sortBy,sortOrder, colID);
+            documentCustom = docRepo.findDocumentCustomByColID( userID, (page -1)*size,size,sortBy,sortOrder, colID, name);
         }
 
 
