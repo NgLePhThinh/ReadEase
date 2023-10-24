@@ -11,7 +11,10 @@ import com.ReadEase.ReadEase.Repo.DocumentRepo;
 import com.ReadEase.ReadEase.Repo.TokenRepo;
 import com.ReadEase.ReadEase.Repo.UserRepo;
 import com.ReadEase.ReadEase.Service.DriveService;
+import com.ReadEase.ReadEase.Service.TokenService;
 import com.google.api.client.auth.oauth2.TokenResponse;
+import jakarta.annotation.Nonnull;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,9 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Set;
+import java.util.*;
 
 @RestController
 @RequestMapping(value = "/api/user/file")
@@ -31,6 +32,9 @@ public class DocumentController {
     private final UserRepo userRepo;
     private final TokenRepo tokenRepo;
     private final AnnotationRepo annotationRepo;
+    private final TokenService tokenService;
+
+
     @GetMapping("/{userID}")
     public ResponseEntity<?> getAllDocuments(@PathVariable("userID") String userID,
                                              @RequestParam("page") int page, @RequestParam("size") int size ){
@@ -41,11 +45,8 @@ public class DocumentController {
         return new ResponseEntity<>(user.getDocumentCustom((page -1) *size,size),HttpStatus.OK);
     }
 
-    @GetMapping("/required-upload/{id}")
+    @GetMapping("/required-upload")
     public ResponseEntity<?> requireDriveAccessToken(@PathVariable("id") String userID) throws GeneralSecurityException, IOException {
-        var user = userRepo.existsById(userID);
-        if(!user)
-            return new ResponseEntity<>("Request invalid!!",HttpStatus.BAD_REQUEST);
         Token token = tokenRepo.findGGToken(TokenType.GG_DRIVE.toString()).orElseThrow();
 
         if(token.getExpriedAt().before(new Date())){
@@ -79,14 +80,51 @@ public class DocumentController {
         return new String(array);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getDocumentAtPageNumberWithSize(@PathVariable("id") String userID, @RequestParam("page") int page,@RequestParam("size") int size){
-        User user = userRepo.findById(userID).orElse(null);
-        if(user == null)
-            return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
-        return  new ResponseEntity<>(user.getDocumentCustom((page-1)*size,size),HttpStatus.OK);
-    }
+    @GetMapping("")
+    public ResponseEntity<?> getDocumentAtPageNumberWithSize(
+            @Nonnull  HttpServletRequest request,
+             @RequestParam("page") int page,
+             @RequestParam("size") int size,
+             @RequestParam("sortBy") String sortBy, // name, lastRead, createAt, star
+             @RequestParam("sortOrder") String sortOrder, // desc (giảm dần) | asc (tăng dần)
+             @RequestParam("name") String name,
+             @RequestParam("collectionID") int colID){
+        String userID = tokenService.getUserID(request);
+        List<Object[]> documentCustom = new ArrayList<>();
+        if(colID == 0){//Trường hợp không truy vấn document theo Collection
+            documentCustom = docRepo.findDocumentCustom1( userID, (page -1)*size,size,sortBy,sortBy, name);
+        }
+        else {
+            documentCustom = docRepo.findDocumentCustomByColID( userID, (page -1)*size,size,sortBy,sortOrder, colID);
+        }
 
+
+
+        return  new ResponseEntity<>(extractResponseData(documentCustom),HttpStatus.OK);
+    }
+    private List <HashMap<String, Object>> extractResponseData (List<Object[]> res){
+        List<HashMap<String, Object>> result = new ArrayList<>();
+        for (Object[] obj: res) {
+            int percent = 0;
+            if(obj[2] instanceof Integer && obj[3] instanceof Integer){
+                percent = (((Integer) obj[3]).intValue()) / (((Integer) obj[2]).intValue()) * 100;
+            }
+            HashMap<String, Object> temp = new HashMap<>();
+            temp.put("ID",obj[0]);
+            temp.put("name", obj[1]);
+            temp.put("totalPages",obj[2]);
+            temp.put("numberOfPagesReading", obj[3]);
+            temp.put("percenPagesRead", percent);
+            temp.put("star",obj[4]);
+            temp.put("createAt", obj[5]);
+            temp.put("lastRead",obj[6]);
+            temp.put("url", obj[7]);
+            temp.put("thumbnailLink",obj[8]);
+
+            result.add(temp);
+        }
+        return result;
+    }
     @PostMapping("/add")
     public ResponseEntity<?> createDocument(@RequestBody DocumentReq req) {
         User user = userRepo.findById(req.getUserID()).orElse(null);
@@ -155,17 +193,18 @@ public class DocumentController {
         return new ResponseEntity<>("Update star successfully!!",HttpStatus.OK);
     }
 
-    @DeleteMapping("/delete")
-    public ResponseEntity <?> deleteDocument(@RequestParam("userID") String userID, @RequestParam("ID") long ID){
+    @DeleteMapping("/delete/{docID}")
+    public ResponseEntity <?> deleteDocument(@Nonnull HttpServletRequest request ,@PathVariable("docID") long docID){
+        String userID = tokenService.getUserID(request);
         User user = userRepo.findById(userID).orElse(null);
-        if(user == null)
-            return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
-        Document doc = docRepo.findById(ID).orElse(null);
-        if(doc == null){
-            return new ResponseEntity<>("Not found document", HttpStatus.NOT_FOUND);
-        }
+
+        //Kiểm tra document có thuộc user không
+        int count = docRepo.existDocumentByUserIDAndDocID(userID,docID);
+        if(count < 1)
+            return new ResponseEntity<>("Request Valid", HttpStatus.BAD_REQUEST);
+        Document doc = docRepo.findById(docID).orElse(null);
         //Trigger annotation
-        annotationRepo.deleteAnnotationsByDocumentId(ID);
+        annotationRepo.deleteAnnotationsByDocumentId(docID);
         user.setTotalCapacity(user.getTotalCapacity() - doc.getSize());
         user.getDocuments().add(doc);
         userRepo.save(user);

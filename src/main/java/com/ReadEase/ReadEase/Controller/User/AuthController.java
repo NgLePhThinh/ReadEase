@@ -3,6 +3,7 @@ package com.ReadEase.ReadEase.Controller.User;
 import com.ReadEase.ReadEase.Config.GeneratePassword;
 import com.ReadEase.ReadEase.Config.JwtService;
 import com.ReadEase.ReadEase.Controller.User.Response.AuthResponse;
+import com.ReadEase.ReadEase.Model.Collection;
 import com.ReadEase.ReadEase.Model.Role;
 import com.ReadEase.ReadEase.Model.Token;
 import com.ReadEase.ReadEase.Model.TokenType;
@@ -26,12 +27,14 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.time.Duration;
-import java.util.Date;
+import java.util.*;
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
-
+    @Value("${application.avatar-default}")
+    private String avatarDefault;
     @Value("${application.cross-origin}")
     private String domain;
     @Value("${application.security.jwt.refresh-token.expiration}")
@@ -52,7 +55,7 @@ public class AuthController {
             return new ResponseEntity<>("Email already exists!!!", HttpStatus.BAD_REQUEST);
 
         Role role = roleRepo.findById(1).orElseThrow();
-        User user = new User(req.getEmail(), passwordEncoder.encode(req.getPassword()), role,req.getTargetLanguage());
+        User user = new User(req.getEmail(), passwordEncoder.encode(req.getPassword()), role,avatarDefault ,req.getTargetLanguage());
         userRepo.save(user);
         String folderID = driveService.createFolder(user.getID());
         user.setIdDriveFolder(folderID);
@@ -67,7 +70,7 @@ public class AuthController {
             GeneratePassword generatePassword = new GeneratePassword();
             String pwd = generatePassword.generateStrongPassword(8);
             user = roleRepo.findById(1).map(role -> {
-                User _user = new User(req.getEmail(), passwordEncoder.encode(pwd), role,req.getTargetLanguage());
+                User _user = new User(req.getEmail(), passwordEncoder.encode(pwd), role, req.getAvatar(), req.getTargetLanguage());
                 _user.setAvatar(req.getAvatar());
                 return userRepo.save(_user);
             }).orElseThrow();
@@ -101,7 +104,7 @@ public class AuthController {
 
         if(!isFirstLogin){
             res.setCurrentDocumentReading(user.getLastReadingDocument());
-            res.setCollections(user.getCollections());
+            res.setCollections(getCollectionCustom(user.getCollections()));
             res.setDocuments(user.getDocumentCustom(0,10));
         }
 
@@ -147,11 +150,24 @@ public class AuthController {
                 .targetLanguage(user.getTargetLanguage())
                 .idDriveFolder(user.getIdDriveFolder())
                 .currentDocumentReading(user.getLastReadingDocument())
-                .collections(user.getCollections())
+                .collections(getCollectionCustom(user.getCollections()))
                 .documents(user.getDocumentCustom(0,10))
                 .build();
 
         return new ResponseEntity<>(res, HttpStatus.OK);
+    }
+    private Set<HashMap<String,Object>> getCollectionCustom(Set<Collection> collections){
+        Set<HashMap<String,Object>> result = new HashSet<>();
+        for (Collection col: collections) {
+            result.add(new HashMap<String, Object>(){
+                {
+                    put("ID",col.getID());
+                    put("name",col.getName());
+                    put("quantity",col.getDocuments().size());
+                }
+            });
+        }
+        return result;
     }
 
     @PutMapping("/logout")
