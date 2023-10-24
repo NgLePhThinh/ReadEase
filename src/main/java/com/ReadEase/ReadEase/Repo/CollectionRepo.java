@@ -12,8 +12,9 @@ import java.util.Set;
 public interface CollectionRepo extends JpaRepository<Collection, Integer> {
 
     //Kiểm tra Collection với ID đầu vào có thuộc bất kỳ User nào không????
-    @Query(value = "select count(*)  from user u, collection c where u.ID = c.USER_ID and c.ID = ?1", nativeQuery = true)
-    int existUserIDbyCollectionID(int colId);
+    @Query(value = "SELECT count(*) FROM user inner join collection where user.ID = ?1 and collection.ID = ?2", nativeQuery = true)
+    int existCollectionByUserIDAndColID(String userID, int colId);
+
 
     //Cập nhật table Collection_Document
     @Transactional

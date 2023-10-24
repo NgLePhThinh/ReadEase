@@ -71,10 +71,10 @@ public class User implements UserDetails {
     @OnDelete(action =  OnDeleteAction.CASCADE)
     private Set<Collection> collections;
 
-    public User(String email, String password, Role role, String targetLanguage) {
+    public User(String email, String password, Role role,String avatar, String targetLanguage) {
         this.email = email;
         this.password = password;
-        this.avatar = "";
+        this.avatar = avatar;
         this.lastAccess = new Date();
         this.createAt = new Date();
         this.totalAccessTime = 0;

@@ -11,6 +11,8 @@ import java.util.Optional;
 public interface TokenRepo extends JpaRepository<Token, Integer> {
 
    Optional<Token> findTokenByToken(String token);
+   @Query(value = "SELECT userID FROM token WHERE token = ?1", nativeQuery = true)
+   String findUserIDByToken(String token);
 
    @Transactional
    @Modifying

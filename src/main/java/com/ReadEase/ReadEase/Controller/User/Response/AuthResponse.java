@@ -4,6 +4,7 @@ import com.ReadEase.ReadEase.Model.Collection;
 import com.ReadEase.ReadEase.Model.Document;
 import lombok.*;
 
+import java.util.HashMap;
 import java.util.Set;
 
 @Setter
@@ -19,7 +20,7 @@ public class AuthResponse {
     private String token;
     private Document currentDocumentReading;
     private Set<Document> documents;
-    private Set<Collection> collections;
+    private  Set <HashMap<String,Object>> collections;
     private int totalDocument;
     private String targetLanguage;
     private String idDriveFolder;
