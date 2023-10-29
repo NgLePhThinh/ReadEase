@@ -22,7 +22,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(value = "/api/user/file")
@@ -82,42 +84,71 @@ public class DocumentController {
              @RequestParam("name") String name,
              @RequestParam("collectionID") int colID){
         String userID = tokenService.getUserID(request);
-        List<Object[]> documentCustom = new ArrayList<>();
-        System.out.println(name);
-        if(colID == 0){//Trường hợp không truy vấn document theo Collection
-            documentCustom = docRepo.findDocumentCustom1( userID, (page -1)*size,size,sortBy,sortBy, name);
+        List<Document> documentCustom = null;
 
-//            return  new ResponseEntity<>(docRepo.findDocumentByName(name,userID),HttpStatus.OK);
+        if(colID == 0){//Trường hợp không truy vấn document theo Collection
+            documentCustom = docRepo.findDocumentByUserIDAndName( userID, name);
         }
         else {
-            documentCustom = docRepo.findDocumentCustomByColID( userID, (page -1)*size,size,sortBy,sortOrder, colID, name);
+            documentCustom = docRepo.findDocumentByColIDAndUserIDAndName( userID,  colID, name);
         }
+        //Sắp xếp dữ liệu theo sortBy, sortOrder
+       sortResponseData(sortBy, sortOrder, documentCustom);
 
 
-
-        return  new ResponseEntity<>(extractResponseData(documentCustom),HttpStatus.OK);
+        return  new ResponseEntity<>(extractResponseData(documentCustom,page,size),HttpStatus.OK);
     }
-    private List <HashMap<String, Object>> extractResponseData (List<Object[]> res){
+
+    private void sortResponseData(String sortBy, String sortOrder,  List<Document> src) {
+
+        if(sortBy.equals("name"))
+            Collections.sort(src,Comparator.comparing(Document::getName));
+        else if(sortBy.equals("lastRead"))
+            Collections.sort(src,Comparator.comparing(Document::getLastRead));
+        else if(sortBy.equals("createAt"))
+            Collections.sort(src,Comparator.comparing(Document::getCreateAt));
+        else if(sortBy.equals("star"))
+            Collections.sort(src,Comparator.comparing(Document::getStar));
+
+        if(sortOrder.equals("desc"))
+            Collections.reverse(src);
+    }
+
+    private List <HashMap<String, Object>> extractResponseData (List<Document> res, int page, int size){
+       if(res == null)
+           return null;
         List<HashMap<String, Object>> result = new ArrayList<>();
-        for (Object[] obj: res) {
+
+        HashMap<String, Object> totalBooks = new HashMap<>();
+        totalBooks.put("totalBooks",res.size());
+        result.add(totalBooks);
+
+        //Phân trang tài liệu
+        res = res.stream()
+                .skip((page-1)*size)
+                .limit(size)
+                .collect(Collectors.toList());
+        //Duyệt từng phần tử, add vào response
+        for (Document doc: res) {
             int percent = 0;
-            if(obj[2] instanceof Integer && obj[3] instanceof Integer){
-                percent = (((Integer) obj[3]).intValue()) / (((Integer) obj[2]).intValue()) * 100;
-            }
+            percent = doc.getNumberOfPagesReading() / doc.getTotalPages() * 100;
+            SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm dd-MM-yyyy");
+
             HashMap<String, Object> temp = new HashMap<>();
-            temp.put("ID",obj[0]);
-            temp.put("name", obj[1]);
-            temp.put("totalPages",obj[2]);
-            temp.put("numberOfPagesReading", obj[3]);
-            temp.put("percenPagesRead", percent);
-            temp.put("star",obj[4]);
-            temp.put("createAt", obj[5]);
-            temp.put("lastRead",obj[6]);
-            temp.put("url", obj[7]);
-            temp.put("thumbnailLink",obj[8]);
+            temp.put("ID",doc.getID());
+            temp.put("name", doc.getName());
+            temp.put("totalPages",doc.getTotalPages());
+            temp.put("numberOfPagesReading", doc.getNumberOfPagesReading());
+            temp.put("percentPagesRead", percent);
+            temp.put("star",doc.getStar());
+            temp.put("createAt",dateFormat.format( doc.getCreateAt()));
+            temp.put("lastRead", dateFormat.format(doc.getLastRead()));
+            temp.put("url", doc.getUrl());
+            temp.put("thumbnailLink",doc.getThumbnailLink());
 
             result.add(temp);
         }
+
         return result;
     }
     @PostMapping("/add")
@@ -144,8 +175,9 @@ public class DocumentController {
                 .build();
         user.setTotalCapacity(user.getTotalCapacity() + doc.getSize());
         user.getDocuments().add(doc);
-        userRepo.save(user);
         docRepo.save(doc);
+        userRepo.save(user);
+
         return new ResponseEntity<>(doc, HttpStatus.CREATED);
     }
     @PutMapping("/rename/{id}")

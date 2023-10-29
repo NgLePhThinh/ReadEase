@@ -1,11 +1,8 @@
 package com.ReadEase.ReadEase.Repo;
 
 import com.ReadEase.ReadEase.Model.Document;
-import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -28,18 +25,19 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
             "WHERE d.name LIKE %?1% ", nativeQuery = true)
     List<Document> findDocumentByName( String name, String userID);
 
-    @Query(value = "select d.ID, d.name,  d.totalPages, d.numberOfPagesReading, d.star,  DATE_FORMAT(d.createAt, '%H:%i %d/%m/%Y') as createAtFormat ,DATE_FORMAT(d.lastRead, '%H:%i %d/%m/%Y') as lastReadFormat, d.url, d.thumbnailLink " +
+
+    //Tìm kiếm document theo nhiều tham số
+    @Query(value = "SELECT d.* " +
             " from user u inner join document d " +
-            "where u.ID = d.USER_ID and u.ID = ?1 AND d.name LIKE %?6%  " +
-            "order by ?4 ?5 " +
-            "limit ?3 " +
-            "offset ?2", nativeQuery = true)
-    List<Object[]> findDocumentCustom1(String userID, int skip, int size, String orderBy, String sortBy, String name);
-    @Query(value = "select d.ID, d.name,  d.totalPages, d.numberOfPagesReading, d.star,  DATE_FORMAT(d.createAt, '%H:%i %d/%m/%Y') as createAtFormat ,DATE_FORMAT(d.lastRead, '%H:%i %d/%m/%Y') as lastReadFormat, d.url, d.thumbnailLink  " +
+            "where  u.ID = d.USER_ID and u.ID = ?1 AND d.name LIKE %?2%", nativeQuery = true)
+    List<Document> findDocumentByUserIDAndName(String userID, String name);
+    //Tìm kiếm document theo
+    @Query(value = "SELECT d.* " +
             "from user u,  document d, collection c, collection_document cd " +
-            "where u.ID = d.USER_ID and u.ID = ?1 and d.ID = cd.DOCUMENT_ID and c.ID = COLLECTION_ID and c.ID = ?6 AND d.name LIKE %?7% " +
-            "order by ?4 ?5 " +
-            "limit ?3 " +
-            "offset ?2", nativeQuery = true)
-    List<Object[]> findDocumentCustomByColID(String userID, int i, int size, String sortBy, String sortOrder, int colID, String name);
+            "where u.ID = d.USER_ID and u.ID = ?1 and d.ID = cd.DOCUMENT_ID and c.ID = COLLECTION_ID and c.ID = ?2 AND d.name LIKE %?3% "
+            , nativeQuery = true)
+    List<Document> findDocumentByColIDAndUserIDAndName(String userID, int colID, String name);
+
+
+
 }

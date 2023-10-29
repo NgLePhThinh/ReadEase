@@ -1,5 +1,6 @@
 package com.ReadEase.ReadEase.Controller.User;
 
+import org.apache.hc.client5.http.fluent.*;
 import com.ReadEase.ReadEase.Config.GeneratePassword;
 import com.ReadEase.ReadEase.Config.JwtService;
 import com.ReadEase.ReadEase.Controller.User.Response.AuthResponse;
@@ -17,6 +18,8 @@ import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.apache.hc.client5.http.fluent.Content;
+import org.apache.hc.client5.http.fluent.Request;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,10 +32,16 @@ import java.security.GeneralSecurityException;
 import java.time.Duration;
 import java.util.*;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.hc.core5.http.ParseException;
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
+    @Value("${application.check-email-url}")
+    private String checkEmailUrl;
     @Value("${application.avatar-default}")
     private String avatarDefault;
     @Value("${application.cross-origin}")
@@ -53,7 +62,8 @@ public class AuthController {
     public ResponseEntity<?> signUp(@RequestBody User req) throws GeneralSecurityException, IOException {
         if (userRepo.countUserByEmail(req.getEmail()) == 1)
             return new ResponseEntity<>("Email already exists!!!", HttpStatus.BAD_REQUEST);
-
+        if(!isExistEmail(req.getEmail()))
+            return new ResponseEntity<>("Email not real", HttpStatus.UNAUTHORIZED);
         Role role = roleRepo.findById(1).orElseThrow();
         User user = new User(req.getEmail(), passwordEncoder.encode(req.getPassword()), role,avatarDefault ,req.getTargetLanguage());
         userRepo.save(user);
@@ -61,6 +71,32 @@ public class AuthController {
         user.setIdDriveFolder(folderID);
         userRepo.save(user);
         return new ResponseEntity<>("Sign up successfully!!", HttpStatus.CREATED);
+    }
+
+    private boolean isExistEmail(String email){
+        Content content = null;
+        try {
+            String url = new String(this.checkEmailUrl);
+            url += email;
+            content = Request
+                    .get(url)
+                    .execute().returnContent();
+            try {
+                ObjectMapper objectMapper = new ObjectMapper();
+                JsonNode jsonNode = objectMapper.readTree(content.toString());
+
+                // Get the value of the "deliverability" key
+                String deliverability = jsonNode.get("deliverability").asText();
+                if(deliverability.equals("DELIVERABLE"))
+                    return true;
+                return false;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+        return false;
     }
     @PostMapping("/login")
     public ResponseEntity<?> loginWithGoogle(@Nonnull HttpServletResponse response,@RequestBody User req){
