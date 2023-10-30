@@ -62,8 +62,10 @@ public class AuthController {
     public ResponseEntity<?> signUp(@RequestBody User req) throws GeneralSecurityException, IOException {
         if (userRepo.countUserByEmail(req.getEmail()) == 1)
             return new ResponseEntity<>("Email already exists!!!", HttpStatus.BAD_REQUEST);
+
         if(!isExistEmail(req.getEmail()))
             return new ResponseEntity<>("Email not real", HttpStatus.UNAUTHORIZED);
+
         Role role = roleRepo.findById(1).orElseThrow();
         User user = new User(req.getEmail(), passwordEncoder.encode(req.getPassword()), role,avatarDefault ,req.getTargetLanguage());
         userRepo.save(user);

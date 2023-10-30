@@ -32,7 +32,9 @@ public class AnnotationController {
         Integer sourceValue = (Integer) target.get("source"); // Assuming "source" is stored as Integer
         long docID = sourceValue != null ? sourceValue.longValue() : 0L;
         Document doc = docRepo.findById(docID).orElse(null);
-        if(doc == null) return new ResponseEntity<>("Not found document", HttpStatus.NOT_FOUND);
+        if(doc == null)
+            return new ResponseEntity<>("Not found document", HttpStatus.NOT_FOUND);
+
         Annotation annotation = new Annotation(
                 (String)req.get("id"),
                 req.get("@context"),
@@ -68,7 +70,7 @@ public class AnnotationController {
         annotationRepo.save(annotation);
         return new ResponseEntity<>("Update successfully!!", HttpStatus.CREATED);
     }
-    @PutMapping("/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<?>  deleteAnnotation(@PathVariable("id") String annotationID){
        annotationRepo.deleteById(annotationID);
 //        annotationRepo.save(annotation);
