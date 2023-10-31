@@ -35,7 +35,7 @@ public class Collection {
         document.getCollections().add(this);
     }
 
-    public void removeDocument(int documentID) {
+    public void removeDocument(long documentID) {
         Document doc = this.documents.stream()
                 .filter(d -> d.getID() == documentID).findFirst()
                 .orElse(null);

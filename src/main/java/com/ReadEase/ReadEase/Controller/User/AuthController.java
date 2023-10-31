@@ -1,8 +1,10 @@
 package com.ReadEase.ReadEase.Controller.User;
 
+import org.apache.hc.client5.http.fluent.*;
 import com.ReadEase.ReadEase.Config.GeneratePassword;
 import com.ReadEase.ReadEase.Config.JwtService;
 import com.ReadEase.ReadEase.Controller.User.Response.AuthResponse;
+import com.ReadEase.ReadEase.Model.Collection;
 import com.ReadEase.ReadEase.Model.Role;
 import com.ReadEase.ReadEase.Model.Token;
 import com.ReadEase.ReadEase.Model.TokenType;
@@ -16,6 +18,8 @@ import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.apache.hc.client5.http.fluent.Content;
+import org.apache.hc.client5.http.fluent.Request;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,13 +30,20 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.time.Duration;
-import java.util.Date;
+import java.util.*;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.hc.core5.http.ParseException;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
-
+    @Value("${application.check-email-url}")
+    private String checkEmailUrl;
+    @Value("${application.avatar-default}")
+    private String avatarDefault;
     @Value("${application.cross-origin}")
     private String domain;
     @Value("${application.security.jwt.refresh-token.expiration}")
@@ -52,13 +63,42 @@ public class AuthController {
         if (userRepo.countUserByEmail(req.getEmail()) == 1)
             return new ResponseEntity<>("Email already exists!!!", HttpStatus.BAD_REQUEST);
 
+        if(!isExistEmail(req.getEmail()))
+            return new ResponseEntity<>("Email not real", HttpStatus.UNAUTHORIZED);
+
         Role role = roleRepo.findById(1).orElseThrow();
-        User user = new User(req.getEmail(), passwordEncoder.encode(req.getPassword()), role,req.getTargetLanguage());
+        User user = new User(req.getEmail(), passwordEncoder.encode(req.getPassword()), role,avatarDefault ,req.getTargetLanguage());
         userRepo.save(user);
         String folderID = driveService.createFolder(user.getID());
         user.setIdDriveFolder(folderID);
         userRepo.save(user);
         return new ResponseEntity<>("Sign up successfully!!", HttpStatus.CREATED);
+    }
+
+    private boolean isExistEmail(String email){
+        Content content = null;
+        try {
+            String url = new String(this.checkEmailUrl);
+            url += email;
+            content = Request
+                    .get(url)
+                    .execute().returnContent();
+            try {
+                ObjectMapper objectMapper = new ObjectMapper();
+                JsonNode jsonNode = objectMapper.readTree(content.toString());
+
+                // Get the value of the "deliverability" key
+                String deliverability = jsonNode.get("deliverability").asText();
+                if(deliverability.equals("DELIVERABLE"))
+                    return true;
+                return false;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+        return false;
     }
     @PostMapping("/login")
     public ResponseEntity<?> loginWithGoogle(@Nonnull HttpServletResponse response,@RequestBody User req){
@@ -68,7 +108,7 @@ public class AuthController {
             GeneratePassword generatePassword = new GeneratePassword();
             String pwd = generatePassword.generateStrongPassword(8);
             user = roleRepo.findById(1).map(role -> {
-                User _user = new User(req.getEmail(), passwordEncoder.encode(pwd), role,req.getTargetLanguage());
+                User _user = new User(req.getEmail(), passwordEncoder.encode(pwd), role, req.getAvatar(), req.getTargetLanguage());
                 _user.setAvatar(req.getAvatar());
                 return userRepo.save(_user);
             }).orElseThrow();
@@ -97,9 +137,12 @@ public class AuthController {
                 .avatar(user.getAvatar())
                 .token(jwtToken)
                 .build();
+
+
+
         if(!isFirstLogin){
             res.setCurrentDocumentReading(user.getLastReadingDocument());
-            res.setCollections(user.getCollections());
+            res.setCollections(getCollectionCustom(user.getCollections()));
             res.setDocuments(user.getDocumentCustom(0,10));
         }
 
@@ -118,7 +161,7 @@ public class AuthController {
 
         User user = userRepo.findUserByEmail(req.getEmail()).orElseThrow();
         if (!passwordEncoder.matches(req.getPassword(), user.getPassword()))
-            return new ResponseEntity<>("Password is not valid", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Password is not valid", HttpStatus.NOT_ACCEPTABLE);
 
         String jwtToken = jwtService.generateToken(user);
 
@@ -145,11 +188,24 @@ public class AuthController {
                 .targetLanguage(user.getTargetLanguage())
                 .idDriveFolder(user.getIdDriveFolder())
                 .currentDocumentReading(user.getLastReadingDocument())
-                .collections(user.getCollections())
+                .collections(getCollectionCustom(user.getCollections()))
                 .documents(user.getDocumentCustom(0,10))
                 .build();
 
         return new ResponseEntity<>(res, HttpStatus.OK);
+    }
+    private Set<HashMap<String,Object>> getCollectionCustom(Set<Collection> collections){
+        Set<HashMap<String,Object>> result = new HashSet<>();
+        for (Collection col: collections) {
+            result.add(new HashMap<String, Object>(){
+                {
+                    put("ID",col.getID());
+                    put("name",col.getName());
+                    put("quantity",col.getDocuments().size());
+                }
+            });
+        }
+        return result;
     }
 
     @PutMapping("/logout")

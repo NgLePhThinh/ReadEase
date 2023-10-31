@@ -1,6 +1,12 @@
 server:
-  port: ${SERVER_PORT:8080}
-
+  port: 8080
+#web:
+#  cors:
+#    allowed-origins: http://localhost:3000
+#    allowed-methods: GET, POST, PATCH, PUT, DELETE, OPTIONS, HEAD
+#    max-age: 3600
+#    allowed-headers: Content-Type, X-Requested-With, accept, Origin, Access-Control-Request-Method,  Access-Control-Request-Headers
+#    exposed-headers: Access-Control-Allow-Origin
 spring:
   data:
     mongodb:
@@ -58,6 +64,8 @@ application:
   drive-api:
     client-id: 726593784919-cqfv8c53np0li2n3d3eb3soens15ui0u.apps.googleusercontent.com
     client-secret: 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
+  avatar-default: https://res.cloudinary.com/dwnunieno/image/upload/v1698063552/oj57znd0lo3nlvtbgr7s.svg
+  check-email-url: https://emailvalidation.abstractapi.com/v1/?api_key=052baafa9901416da56289e52b046788&email=
 # "https://read-ease.azurewebsites.net"
 
 
