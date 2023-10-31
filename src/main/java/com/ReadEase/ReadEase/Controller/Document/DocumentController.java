@@ -151,6 +151,8 @@ public class DocumentController {
 
         return result;
     }
+
+
     @PostMapping("/add")
     public ResponseEntity<?> createDocument(@RequestBody DocumentReq req) {
         User user = userRepo.findById(req.getUserID()).orElse(null);
@@ -180,6 +182,16 @@ public class DocumentController {
 
         return new ResponseEntity<>(doc, HttpStatus.CREATED);
     }
+
+    @GetMapping("/check-duplicate-name")
+    public ResponseEntity<?> checkDuplicateName(@Nonnull HttpServletRequest httpServletRequest ,@RequestParam("name") String name){
+        String userID = tokenService.getUserID(httpServletRequest);
+        if(docRepo.countDocumentByName(userID,name) > 0){
+            return new ResponseEntity<>("The document name must not be duplicated.", HttpStatus.BAD_REQUEST);
+        }
+        return new ResponseEntity<>("",HttpStatus.OK);
+    }
+
     @PutMapping("/rename/{id}")
     public ResponseEntity<?> renameDocument(@PathVariable("id") long docID,@RequestBody DocumentReq req){
         Document doc = docRepo.findById(docID).orElse(null);
