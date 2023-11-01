@@ -16,19 +16,16 @@ import java.util.Optional;
 public interface UserRepo extends JpaRepository<User, String> {
     Optional<User> findUserByEmail(String email);
 
-    //    boolean existByEmail(String email);
 
     @Transactional
     @Modifying
-    @Query(value = "SELECT * FROM user t WHERE t.ROLE_ID= :roleID", nativeQuery = true)
-    List<User> findUserByRole(@Param("roleID") int roleID);
+    @Query(value = "update user set totalCapacity = totalCapacity - ?2 where ID = ?1", nativeQuery = true)
+    void  updateUserTotalCapacityBeforeDeleteDoc(String userID, float totalCapacity);
 
     @Transactional
     @Modifying
-    @Query(value = "UPDATE user t " +
-            " SET t.lastAccess = :date , t.totalAccessTime = :ttTime " +
-            "WHERE t.email = :email", nativeQuery = true)
-    int updateLastAccessByEmail(@Param("email") String email, @Param("date") Date date, @Param("ttTime") long ttTime);
+    @Query(value = "update user set totalCapacity = totalCapacity + ?2 where ID = ?1", nativeQuery = true)
+    void  updateUserTotalCapacityBeforeAddDoc(String userID, float totalCapacity);
 
     @Transactional
     @Modifying
@@ -37,6 +34,7 @@ public interface UserRepo extends JpaRepository<User, String> {
 
     @Query(value = "SELECT count(*) FROM user u where u.email = ?1", nativeQuery = true)
     int countUserByEmail(String email);
+
 
 
 }

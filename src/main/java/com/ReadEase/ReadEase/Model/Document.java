@@ -12,7 +12,6 @@ import java.util.Set;
         indexes = {
                 @Index(name = "idx_name", columnList = "name")
         }
-
 )
 @Builder()
 @Data
@@ -53,6 +52,4 @@ public class Document {
             mappedBy = "documents")
     @JsonIgnore
     private Set<Collection> collections;
-
-
 }

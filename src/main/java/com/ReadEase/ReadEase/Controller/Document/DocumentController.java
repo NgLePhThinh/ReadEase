@@ -18,6 +18,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -37,14 +38,15 @@ public class DocumentController {
     private final TokenService tokenService;
 
 
-    @GetMapping("/{userID}")
-    public ResponseEntity<?> getAllDocuments(@PathVariable("userID") String userID,
-                                             @RequestParam("page") int page, @RequestParam("size") int size ){
-        User user = userRepo.findById(userID).orElse(null);
-        if(user == null)
-            return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
+    @GetMapping("/{docID}")
+    public ResponseEntity<?> getDocument(
+            @Nonnull HttpServletRequest servletRequest,
+            @PathVariable("docID") long docID){
+        String userID = tokenService.getUserID(servletRequest);
+        if(docRepo.existDocumentByUserIDAndDocID(userID,docID) < 1)
+            return new ResponseEntity<>("Document not found", HttpStatus.NOT_FOUND);
 
-        return new ResponseEntity<>(user.getDocumentCustom((page -1) *size,size),HttpStatus.OK);
+        return new ResponseEntity<>(docRepo.findById(docID),HttpStatus.OK);
     }
 
     @GetMapping("/required-upload")
@@ -192,23 +194,26 @@ public class DocumentController {
         return new ResponseEntity<>("",HttpStatus.OK);
     }
 
-    @PutMapping("/rename/{id}")
-    public ResponseEntity<?> renameDocument(@PathVariable("id") long docID,@RequestBody DocumentReq req){
-        Document doc = docRepo.findById(docID).orElse(null);
-        if(doc == null){
+    @PutMapping("/rename")
+    public ResponseEntity<?> renameDocument(
+            @Nonnull HttpServletRequest httpServletRequest,
+            @RequestBody HashMap<String, Object> docReq
+    ){
+        String userID = tokenService.getUserID(httpServletRequest);
+        Long docID = ((Integer) docReq.get("ID")).longValue();
+        //Kiểm tra tài liệu có phải thuộc user
+        if(docRepo.existDocumentByUserIDAndDocID(userID,docID) < 1){
             return new ResponseEntity<>("Not found document", HttpStatus.NOT_FOUND);
         }
-
-        Set <String> names = docRepo.findDocumentNameByUserID(req.getUserID());
-        for (String name: names) {
-            if(name.equals(req.getName()))
-                return new ResponseEntity<>("The document name must not be duplicated.", HttpStatus.BAD_REQUEST);
+        //Kiểm tra tên trùng
+        if(docRepo.countDocumentByName(userID,(String)docReq.get("name")) > 0){
+            return new ResponseEntity<>("The document name must not be duplicated.", HttpStatus.BAD_REQUEST);
         }
-
-        doc.setName(req.getName());
-        docRepo.save(doc);
+        docRepo.updateDocumentNameByID(docID, (String) docReq.get("name"));
         return new ResponseEntity<>("Rename successfully!!",HttpStatus.OK);
     }
+
+
     @PutMapping("/update")
     public ResponseEntity<?> updateDocument(@RequestBody Document req){
         Document doc = docRepo.findById(req.getID()).orElse(null);
@@ -221,21 +226,28 @@ public class DocumentController {
 
         return new ResponseEntity<>("Update successfully!!",HttpStatus.OK);
     }
-    @PutMapping("/update-star/{docID}")
-    public ResponseEntity<?> updateDocumentStar(@PathVariable("docID") long docID, @RequestParam("star") int star){
-        Document doc = docRepo.findById(docID).orElse(null);
-        if(doc == null){
+    @PutMapping("/rating")
+    public ResponseEntity<?> updateDocumentStar(
+            @Nonnull HttpServletRequest httpServletRequest,
+            @RequestBody HashMap<String, Object> docReq
+    ){
+        String userID = tokenService.getUserID(httpServletRequest);
+
+        Integer temp = (Integer)docReq.get("ID");
+        long docID = temp != null ? temp.longValue() : 0L;
+
+        if(docRepo.existDocumentByUserIDAndDocID(userID,docID) < 1){
             return new ResponseEntity<>("Not found document", HttpStatus.NOT_FOUND);
         }
-        doc.setStar(star);
-        docRepo.save(doc);
+        Float starValue = ((Double) docReq.get("star")).floatValue();
+        docRepo.updateDocumentStar(docID,starValue);
         return new ResponseEntity<>("Update star successfully!!",HttpStatus.OK);
     }
 
     @DeleteMapping("/delete/{docID}")
     public ResponseEntity <?> deleteDocument(@Nonnull HttpServletRequest request ,@PathVariable("docID") long docID){
         String userID = tokenService.getUserID(request);
-        User user = userRepo.findById(userID).orElse(null);
+//        User user = userRepo.findById(userID).orElse(null);
 
         //Kiểm tra document có thuộc user không
         int count = docRepo.existDocumentByUserIDAndDocID(userID,docID);
@@ -244,13 +256,10 @@ public class DocumentController {
         Document doc = docRepo.findById(docID).orElse(null);
         //Trigger annotation
         annotationRepo.deleteAnnotationsByDocumentId(docID);
-        user.setTotalCapacity(user.getTotalCapacity() - doc.getSize());
-        user.getDocuments().add(doc);
-        userRepo.save(user);
-        docRepo.delete(doc);
+
+        userRepo.updateUserTotalCapacityBeforeDeleteDoc(userID,doc.getSize());
+        docRepo.deleteById(docID);
         return new ResponseEntity<>("Ok",HttpStatus.OK);
     }
-
-
 
 }
