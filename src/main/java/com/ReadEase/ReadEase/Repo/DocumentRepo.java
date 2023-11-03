@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -33,10 +34,12 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
     @Query(value = "update document set star = ?2 where ID = ?1", nativeQuery = true)
     void updateDocumentStar(long docID, float star);
 
-//    @Transactional
-//    @Modifying
-//    @Query(value = "update document set star = ?2 where ID = ?1", nativeQuery = true)
-//    void updateDocumentStar(long docID, float star);
+    @Transactional
+    @Modifying
+    @Query(value = "update document set lastRead = ?2,  numberOfPagesReading  = ?3 where ID = ?1", nativeQuery = true)
+    void updatePageReadingAndLastRead(long docID,Date date, int numberOfPagesReading);
+
+
 
 
 

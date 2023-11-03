@@ -26,10 +26,9 @@ public class SecurityConfig {
     private final AuthenticationProvider authenticationProvider;
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
-        System.out.println(crossOrigin);
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(crossOrigin));
-        configuration.setAllowedMethods(Arrays.asList("POST", "GET", "PUT", "DELETE"));
+        configuration.setAllowedMethods(Arrays.asList("*"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

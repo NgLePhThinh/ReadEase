@@ -2,10 +2,7 @@ package com.ReadEase.ReadEase.Controller.Document;
 
 
 import com.ReadEase.ReadEase.Controller.Document.Request.DocumentReq;
-import com.ReadEase.ReadEase.Model.Document;
-import com.ReadEase.ReadEase.Model.Token;
-import com.ReadEase.ReadEase.Model.TokenType;
-import com.ReadEase.ReadEase.Model.User;
+import com.ReadEase.ReadEase.Model.*;
 import com.ReadEase.ReadEase.Repo.AnnotationRepo;
 import com.ReadEase.ReadEase.Repo.DocumentRepo;
 import com.ReadEase.ReadEase.Repo.TokenRepo;
@@ -18,7 +15,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -37,7 +33,6 @@ public class DocumentController {
     private final AnnotationRepo annotationRepo;
     private final TokenService tokenService;
 
-
     @GetMapping("/{docID}")
     public ResponseEntity<?> getDocument(
             @Nonnull HttpServletRequest servletRequest,
@@ -46,7 +41,14 @@ public class DocumentController {
         if(docRepo.existDocumentByUserIDAndDocID(userID,docID) < 1)
             return new ResponseEntity<>("Document not found", HttpStatus.NOT_FOUND);
 
-        return new ResponseEntity<>(docRepo.findById(docID),HttpStatus.OK);
+        List<Annotation> annotationList = annotationRepo.findAnnotationByDocID(docID);
+
+        return new ResponseEntity<>(new HashMap<String,Object>(){
+            {
+                put("document",  docRepo.findById(docID));
+                put("annotations", annotationList);
+            }
+        },HttpStatus.OK);
     }
 
     @GetMapping("/required-upload")
@@ -132,7 +134,7 @@ public class DocumentController {
                 .collect(Collectors.toList());
         //Duyệt từng phần tử, add vào response
         for (Document doc: res) {
-            int percent = 0;
+            float percent = 0;
             percent = doc.getNumberOfPagesReading() / doc.getTotalPages() * 100;
             SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm dd-MM-yyyy");
 
@@ -214,33 +216,35 @@ public class DocumentController {
     }
 
 
-    @PutMapping("/update")
-    public ResponseEntity<?> updateDocument(@RequestBody Document req){
-        Document doc = docRepo.findById(req.getID()).orElse(null);
-        if(doc == null){
-            return new ResponseEntity<>("Not found document", HttpStatus.NOT_FOUND);
-        }
-        doc.setNumberOfPagesReading(req.getNumberOfPagesReading());
-
-        docRepo.save(doc);
-
-        return new ResponseEntity<>("Update successfully!!",HttpStatus.OK);
-    }
-    @PutMapping("/rating")
-    public ResponseEntity<?> updateDocumentStar(
+    @PutMapping("/update/{docID}")
+    public ResponseEntity<?> updateDocument(
             @Nonnull HttpServletRequest httpServletRequest,
-            @RequestBody HashMap<String, Object> docReq
+            @PathVariable("docID") long docID,
+            @RequestBody Document docReq
     ){
         String userID = tokenService.getUserID(httpServletRequest);
-
-        Integer temp = (Integer)docReq.get("ID");
-        long docID = temp != null ? temp.longValue() : 0L;
 
         if(docRepo.existDocumentByUserIDAndDocID(userID,docID) < 1){
             return new ResponseEntity<>("Not found document", HttpStatus.NOT_FOUND);
         }
-        Float starValue = ((Double) docReq.get("star")).floatValue();
-        docRepo.updateDocumentStar(docID,starValue);
+
+        docRepo.updatePageReadingAndLastRead(docID,new Date(),docReq.getNumberOfPagesReading());
+        return new ResponseEntity<>("Update successfully!!",HttpStatus.OK);
+    }
+
+    @PutMapping("/rating/{docID}")
+    public ResponseEntity<?> updateDocumentStar(
+            @Nonnull HttpServletRequest httpServletRequest,
+            @PathVariable("docID") long docID,
+            @RequestBody Document docReq
+    ){
+        String userID = tokenService.getUserID(httpServletRequest);
+
+        if(docRepo.existDocumentByUserIDAndDocID(userID,docID) < 1){
+            return new ResponseEntity<>("Not found document", HttpStatus.NOT_FOUND);
+        }
+
+        docRepo.updateDocumentStar(docID,docReq.getStar());
         return new ResponseEntity<>("Update star successfully!!",HttpStatus.OK);
     }
 

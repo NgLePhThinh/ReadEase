@@ -15,7 +15,7 @@ import java.util.List;
 
 
 @RestController
-@RequestMapping("/api/user/file/note")
+@RequestMapping("/api/user/file/annotation")
 @RequiredArgsConstructor
 public class AnnotationController {
     private final DocumentRepo docRepo;
@@ -29,8 +29,9 @@ public class AnnotationController {
     @PostMapping("")
     public ResponseEntity<?>  createAnnotation(@RequestBody HashMap<String, Object> req){
         HashMap<String,Object> target = (LinkedHashMap<String,Object>)req.get("target");
-        Integer sourceValue = (Integer) target.get("source"); // Assuming "source" is stored as Integer
-        long docID = sourceValue != null ? sourceValue.longValue() : 0L;
+        String sourceValue = (String) target.get("source");
+        System.out.println(sourceValue + " " + sourceValue.getClass());
+        long docID = Long.parseLong(sourceValue);
         Document doc = docRepo.findById(docID).orElse(null);
         if(doc == null)
             return new ResponseEntity<>("Not found document", HttpStatus.NOT_FOUND);
@@ -52,8 +53,11 @@ public class AnnotationController {
     @PutMapping("")
     public ResponseEntity<?>  updateAnnotation( @RequestBody HashMap<String, Object> req){
         HashMap<String,Object> target = (LinkedHashMap<String,Object>)req.get("target");
-        Integer sourceValue = (Integer) target.get("source"); // Assuming "source" is stored as Integer
-        long docID = sourceValue != null ? sourceValue.longValue() : 0L;
+
+        String sourceValue = (String) target.get("source");
+        System.out.println(sourceValue + " " + sourceValue.getClass());
+        long docID = Long.parseLong(sourceValue);
+
         Document doc = docRepo.findById(docID).orElse(null);
         if(doc == null) return new ResponseEntity<>("Not found document", HttpStatus.NOT_FOUND);
         Annotation annotation = new Annotation(
@@ -68,7 +72,7 @@ public class AnnotationController {
                 (String)req.get("modified")
         );
         annotationRepo.save(annotation);
-        return new ResponseEntity<>("Update successfully!!", HttpStatus.CREATED);
+        return new ResponseEntity<>("Update successfully!!", HttpStatus.OK);
     }
     @DeleteMapping("/{id}")
     public ResponseEntity<?>  deleteAnnotation(@PathVariable("id") String annotationID){

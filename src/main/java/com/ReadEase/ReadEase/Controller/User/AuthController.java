@@ -63,11 +63,11 @@ public class AuthController {
         if (userRepo.countUserByEmail(req.getEmail()) == 1)
             return new ResponseEntity<>("Email already exists!!!", HttpStatus.BAD_REQUEST);
 
-        if(!isExistEmail(req.getEmail()))
+        if (!isExistEmail(req.getEmail()))
             return new ResponseEntity<>("Email not real", HttpStatus.UNAUTHORIZED);
 
         Role role = roleRepo.findById(1).orElseThrow();
-        User user = new User(req.getEmail(), passwordEncoder.encode(req.getPassword()), role,avatarDefault ,req.getTargetLanguage());
+        User user = new User(req.getEmail(), passwordEncoder.encode(req.getPassword()), role, avatarDefault, req.getTargetLanguage());
         userRepo.save(user);
         String folderID = driveService.createFolder(user.getID());
         user.setIdDriveFolder(folderID);
@@ -75,7 +75,7 @@ public class AuthController {
         return new ResponseEntity<>("Sign up successfully!!", HttpStatus.CREATED);
     }
 
-    private boolean isExistEmail(String email){
+    private boolean isExistEmail(String email) {
         Content content = null;
         try {
             String url = new String(this.checkEmailUrl);
@@ -89,7 +89,7 @@ public class AuthController {
 
                 // Get the value of the "deliverability" key
                 String deliverability = jsonNode.get("deliverability").asText();
-                if(deliverability.equals("DELIVERABLE"))
+                if (deliverability.equals("DELIVERABLE"))
                     return true;
                 return false;
             } catch (Exception e) {
@@ -100,11 +100,12 @@ public class AuthController {
         }
         return false;
     }
+
     @PostMapping("/login")
-    public ResponseEntity<?> loginWithGoogle(@Nonnull HttpServletResponse response,@RequestBody User req){
+    public ResponseEntity<?> loginWithGoogle(@Nonnull HttpServletResponse response, @RequestBody User req) {
         User user = userRepo.findUserByEmail(req.getEmail()).orElse(null);
         boolean isFirstLogin = false;
-        if(user == null){
+        if (user == null) {
             GeneratePassword generatePassword = new GeneratePassword();
             String pwd = generatePassword.generateStrongPassword(8);
             user = roleRepo.findById(1).map(role -> {
@@ -118,14 +119,14 @@ public class AuthController {
         String jwtToken = jwtService.generateToken(user);
 
         //Update token into database
-        if ( checkExistAndSaveToken(user, jwtToken, TokenType.ACCESS))
-            return new ResponseEntity<>("Can not sign in now!!!",HttpStatus.FORBIDDEN);
+        checkExistAndSaveToken(user, jwtToken, TokenType.ACCESS);
+
 
         user.setLastAccess(new Date());
         userRepo.save(user);
 
         Cookie cookie = new Cookie("refreshToken", jwtService.generateRefreshToken(user));
-        cookie.setMaxAge(maxAgeCookie/1000);
+        cookie.setMaxAge(maxAgeCookie / 1000);
         cookie.setHttpOnly(true);
 //        cookie.setDomain("http://localhost:3000");
         response.addCookie(cookie);
@@ -139,23 +140,24 @@ public class AuthController {
                 .build();
 
 
-
-        if(!isFirstLogin){
+        if (!isFirstLogin) {
             res.setCurrentDocumentReading(user.getLastReadingDocument());
             res.setCollections(getCollectionCustom(user.getCollections()));
-            res.setDocuments(user.getDocumentCustom(0,10));
+            res.setDocuments(user.getDocumentCustom(0, 10));
         }
 
         return new ResponseEntity<>(res, HttpStatus.OK);
     }
+
     @PostMapping("/login/step1")
     public ResponseEntity<?> loginStep1(@RequestBody User req) {
         if (userRepo.countUserByEmail(req.getEmail()) == 0)
             return new ResponseEntity<>("Email is not valid!!!", HttpStatus.BAD_REQUEST);
         return new ResponseEntity<>("Email is valid", HttpStatus.OK);
     }
+
     @PostMapping("/login/step2")
-    public ResponseEntity<?> loginStep2(@Nonnull HttpServletResponse response,@RequestBody User req) {
+    public ResponseEntity<?> loginStep2(@Nonnull HttpServletResponse response, @RequestBody User req) {
         if (userRepo.countUserByEmail(req.getEmail()) == 0)
             return new ResponseEntity<>("Email is not valid!!!", HttpStatus.BAD_REQUEST);
 
@@ -166,14 +168,14 @@ public class AuthController {
         String jwtToken = jwtService.generateToken(user);
 
         //Update token into database
-        if ( checkExistAndSaveToken(user, jwtToken, TokenType.ACCESS))
-            return new ResponseEntity<>("Can not sign in now!!!",HttpStatus.FORBIDDEN);
+        checkExistAndSaveToken(user, jwtToken, TokenType.ACCESS);
+
 
         user.setLastAccess(new Date());
         userRepo.save(user);
 
         Cookie cookie = new Cookie("refreshToken", jwtService.generateRefreshToken(user));
-        cookie.setMaxAge(maxAgeCookie/1000);
+        cookie.setMaxAge(maxAgeCookie / 1000);
         cookie.setHttpOnly(true);
 //        cookie.setDomain("http://localhost:3000");
         response.addCookie(cookie);
@@ -189,19 +191,20 @@ public class AuthController {
                 .idDriveFolder(user.getIdDriveFolder())
                 .currentDocumentReading(user.getLastReadingDocument())
                 .collections(getCollectionCustom(user.getCollections()))
-                .documents(user.getDocumentCustom(0,10))
+                .documents(user.getDocumentCustom(0, 10))
                 .build();
 
         return new ResponseEntity<>(res, HttpStatus.OK);
     }
-    private Set<HashMap<String,Object>> getCollectionCustom(Set<Collection> collections){
-        Set<HashMap<String,Object>> result = new HashSet<>();
-        for (Collection col: collections) {
-            result.add(new HashMap<String, Object>(){
+
+    private Set<HashMap<String, Object>> getCollectionCustom(Set<Collection> collections) {
+        Set<HashMap<String, Object>> result = new HashSet<>();
+        for (Collection col : collections) {
+            result.add(new HashMap<String, Object>() {
                 {
-                    put("ID",col.getID());
-                    put("name",col.getName());
-                    put("quantity",col.getDocuments().size());
+                    put("ID", col.getID());
+                    put("name", col.getName());
+                    put("quantity", col.getDocuments().size());
                 }
             });
         }
@@ -209,11 +212,11 @@ public class AuthController {
     }
 
     @PutMapping("/logout")
-    public ResponseEntity<?> logout(@Nonnull HttpServletResponse response,@RequestBody User req) {
+    public ResponseEntity<?> logout(@Nonnull HttpServletResponse response, @RequestBody User req) {
 
         User user = userRepo.findUserByEmail(req.getEmail()).orElse(null);
 
-        if(user == null) return  new ResponseEntity<>("User not found",HttpStatus.NOT_FOUND);
+        if (user == null) return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
 
         long totalTime = Duration.between(user.getLastAccess().toInstant(), new Date().toInstant()).getSeconds();
 
@@ -270,7 +273,6 @@ public class AuthController {
 
 
     private void saveUserToken(User user, String jwt, TokenType tokenType) {
-        System.out.println(new Date().getTime() + "\n" + getExpiration(tokenType));
         tokenRepo.save(Token.builder()
                 .user(user)
                 .expriedAt(new Date(new Date().getTime() + getExpiration(tokenType)))
@@ -279,26 +281,23 @@ public class AuthController {
                 .build());
     }
 
-    private boolean checkExistAndSaveToken(User user, String jwt, TokenType tokenType) {
+    private void checkExistAndSaveToken(User user, String jwt, TokenType tokenType) {
 
-        Token token = tokenRepo.findTokenByUserIDAndType(user.getID(), tokenType.toString())
-                .orElse(null);
-        if (token != null)
-            return true;
+        tokenRepo.deleteTokenByUserID(user.getID());
         saveUserToken(user, jwt, tokenType);
-        return false;
     }
 
     @Value("${application.security.jwt.expiration}")
-    private long  accessTokenExpiration;
+    private long accessTokenExpiration;
     @Value("${application.security.jwt.refresh-token.expiration}")
     private long refreshTokenExpiration;
     @Value("${application.security.jwt.expiration-reset-password}")
-    private  long resetPasswordExpiration;
+    private long resetPasswordExpiration;
+
     private long getExpiration(TokenType tokenType) {
-        return tokenType == TokenType.ACCESS ?  accessTokenExpiration
+        return tokenType == TokenType.ACCESS ? accessTokenExpiration
                 : tokenType == TokenType.REFRESH ? refreshTokenExpiration
-                :resetPasswordExpiration;
+                : resetPasswordExpiration;
     }
 
 
