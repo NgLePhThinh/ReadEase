@@ -41,7 +41,7 @@ public class DocumentController {
         if(docRepo.existDocumentByUserIDAndDocID(userID,docID) < 1)
             return new ResponseEntity<>("Document not found", HttpStatus.NOT_FOUND);
 
-        List<Annotation> annotationList = annotationRepo.findAnnotationByDocID(docID);
+        List<Annotation> annotationList = annotationRepo.findAnnotationByDocID(String.valueOf(docID));
 
         return new ResponseEntity<>(new HashMap<String,Object>(){
             {
@@ -135,7 +135,7 @@ public class DocumentController {
         //Duyệt từng phần tử, add vào response
         for (Document doc: res) {
             float percent = 0;
-            percent = doc.getNumberOfPagesReading() / doc.getTotalPages() * 100;
+            percent = Math.round((doc.getNumberOfPagesReading() * 1.0f / doc.getTotalPages()) * 100);
             SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm dd-MM-yyyy");
 
             HashMap<String, Object> temp = new HashMap<>();
@@ -259,7 +259,7 @@ public class DocumentController {
             return new ResponseEntity<>("Request Valid", HttpStatus.BAD_REQUEST);
         Document doc = docRepo.findById(docID).orElse(null);
         //Trigger annotation
-        annotationRepo.deleteAnnotationsByDocumentId(docID);
+        annotationRepo.deleteAnnotationsByDocument(String.valueOf(docID));
 
         userRepo.updateUserTotalCapacityBeforeDeleteDoc(userID,doc.getSize());
         docRepo.deleteById(docID);

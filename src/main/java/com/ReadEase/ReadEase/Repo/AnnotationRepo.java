@@ -12,8 +12,8 @@ import java.util.List;
 @Repository
 public interface AnnotationRepo extends MongoRepository<Annotation,String> {
     @Query("{'target.source':?0}")
-    List<Annotation> findAnnotationByDocID(long docID);
+    List<Annotation> findAnnotationByDocID(String docID);
     @DeleteQuery("{ 'target.source' : ?0 }")
-    void deleteAnnotationsByDocumentId(long documentId);
+    void deleteAnnotationsByDocument(String documentId);
 
 }

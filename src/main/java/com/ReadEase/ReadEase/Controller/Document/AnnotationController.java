@@ -22,7 +22,7 @@ public class AnnotationController {
     private final AnnotationRepo annotationRepo;
     @GetMapping("/{id}")
     public ResponseEntity<?>  getAnnotation(@PathVariable("id") long docID){
-        List<Annotation> res = annotationRepo.findAnnotationByDocID(docID);
+        List<Annotation> res = annotationRepo.findAnnotationByDocID(String.valueOf(docID));
         return new ResponseEntity<>(res, HttpStatus.OK);
     }
 
