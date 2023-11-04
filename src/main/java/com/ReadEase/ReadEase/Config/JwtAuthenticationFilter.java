@@ -1,6 +1,7 @@
 package com.ReadEase.ReadEase.Config;
 
 import com.ReadEase.ReadEase.Repo.TokenRepo;
+import com.ReadEase.ReadEase.Repo.UserRepo;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -23,6 +24,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final TokenRepo tokenRepo;
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final UserRepo userRepo;
 
     @Override
     protected void doFilterInternal(
@@ -43,9 +45,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         userEmail = jwtService.extractUserEmail(jwt); //todo extract the userEmail form jwt token
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+
             //Kiểm tra token trong Authorization có phải là token hiện tại hay không
-            var isValidToken = tokenRepo.findTokenByToken(jwt).orElse(null);
-            if (jwtService.isTokenValid(jwt, userDetails) && isValidToken != null) {
+            String userID = userRepo.findUserIDByEmail(userEmail);
+            String isValidToken = tokenRepo.findAccessTokenByUserID(userID);
+            // Lỗi token không tồn tại trong csdl.
+            if(isValidToken == null){
+                response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE); // 406
+                return;
+            }
+            // Lỗi token của phiên đăng nhập trước đó.
+            else if(!isValidToken.equals(jwt)){
+                System.out.println("Token is invalid");
+//                response.reset();
+//                response.sendError(409,"Token is not exist");
+                response.setStatus(HttpServletResponse.SC_CONFLICT); // 409
+                return;
+            }
+            else if (jwtService.isTokenValid(jwt, userDetails)) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
                         null,

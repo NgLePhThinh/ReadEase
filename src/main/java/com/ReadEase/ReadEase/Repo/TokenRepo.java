@@ -14,6 +14,9 @@ public interface TokenRepo extends JpaRepository<Token, Integer> {
    @Query(value = "SELECT userID FROM token WHERE token = ?1", nativeQuery = true)
    String findUserIDByToken(String token);
 
+   @Query(value = "SELECT token FROM token WHERE userID = ?1 and type = 'ACCESS' ", nativeQuery = true)
+   String findAccessTokenByUserID(String userID);
+
    @Transactional
    @Modifying
    @Query(value = "DELETE FROM token t\n" +
