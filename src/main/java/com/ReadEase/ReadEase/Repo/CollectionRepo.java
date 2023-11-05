@@ -7,15 +7,17 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Set;
 @Repository
 public interface CollectionRepo extends JpaRepository<Collection, Integer> {
 
     //Kiểm tra Collection với ID đầu vào có thuộc bất kỳ User nào không????
-    @Query(value = "SELECT count(*) FROM user inner join collection where user.ID = ?1 and collection.ID = ?2", nativeQuery = true)
+    @Query(value = "SELECT count(*) FROM collection where collection.USER_ID = ?1 and collection.ID = ?2", nativeQuery = true)
     int existCollectionByUserIDAndColID(String userID, int colId);
 
-
+    @Query(value = "SELECT * FROM collection where collection.USER_ID = ?1", nativeQuery = true)
+    List<Collection> getAllCollectionByUserID(String userID);
     //Cập nhật table Collection_Document
     @Transactional
     @Modifying
@@ -32,6 +34,10 @@ public interface CollectionRepo extends JpaRepository<Collection, Integer> {
     @Query(value = "select c.name from user u, collection c where u.ID = c.USER_ID and u.ID = ?1", nativeQuery = true)
     Set<String> findCollectionNameByUserID(String userID);
 
+    @Query(value = "select * from collection  where USER_ID = ?1 and ID = ?2", nativeQuery = true)
+    Collection findCollectionNameByIDAndUserID(String userID, int ID);
 
+    @Query(value = "SELECT count(*) FROM collection_document where COLLECTION_ID = ?1 and DOCUMENT_ID = ?2", nativeQuery = true)
+    int checkDuplicateDocumentInCollection(int colID, long docID);
 
 }

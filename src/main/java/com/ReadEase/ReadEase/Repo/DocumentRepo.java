@@ -15,7 +15,7 @@ import java.util.Set;
 public interface DocumentRepo extends JpaRepository<Document, Long> {
 
     //Kiểm tra Collection với ID đầu vào có thuộc bất kỳ User nào không????
-    @Query(value = "SELECT count(*) FROM user inner join document where user.ID = ?1 and document.ID = ?2", nativeQuery = true)
+    @Query(value = "SELECT count(*) FROM  document where document.USER_ID = ?1 and document.ID = ?2", nativeQuery = true)
     int existDocumentByUserIDAndDocID(String userID, long docID);
 
     @Query(value ="SELECT count(*) FROM user inner join document where user.ID = ?1 and document.name = ?2" ,nativeQuery = true)

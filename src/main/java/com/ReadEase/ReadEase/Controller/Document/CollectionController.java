@@ -17,6 +17,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 
 @RestController
@@ -28,12 +30,11 @@ public class CollectionController {
     private final TokenService tokenService;
 
     private final UserRepo userRepo;
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getCollectionByID(@Nonnull HttpServletRequest request, @PathVariable("") int id){
+    @GetMapping("/get-all")
+    public ResponseEntity<?> getCollectionByID(@Nonnull HttpServletRequest request){
         String userID = tokenService.getUserID(request);
-        int count = colRepo.existCollectionByUserIDAndColID(userID,id);
-        if(count < 1) return new ResponseEntity<>("Request Valid", HttpStatus.BAD_REQUEST);
-        return new ResponseEntity<>(colRepo.findById(id),HttpStatus.OK);
+
+        return new ResponseEntity<>(colRepo.getAllCollectionByUserID(userID),HttpStatus.OK);
     }
     @PostMapping("")
     public ResponseEntity<?> createCollection(@RequestBody CollectionReq req){
@@ -54,21 +55,54 @@ public class CollectionController {
         return new ResponseEntity<>("Create collection successfully!!!",HttpStatus.CREATED);
     }
     @PutMapping("/{colId}/add-document/{docId}")
-    public ResponseEntity<?> addDocumentIntoCollection(@PathVariable("colId") int colID,@PathVariable("docId") long docID){
+    public ResponseEntity<?> addDocumentIntoCollection(
+            @PathVariable("colId") int colID,
+            @PathVariable("docId") long docID,
+            @Nonnull HttpServletRequest servletRequest
+    ){
 
-        Document doc = docRepo.findById(docID).orElse(null);
-        Collection collection = colRepo.findById(colID).orElse(null);
-        if(doc == null || collection == null)
-            return new ResponseEntity<>("Request Invalid", HttpStatus.BAD_REQUEST);
+        String userID = tokenService.getUserID(servletRequest);
 
-        collection.addDocument(doc);
-        doc.getCollections().add(collection);
+        if((docRepo.existDocumentByUserIDAndDocID(userID,docID)) < 1 ||
+                colRepo.existCollectionByUserIDAndColID(userID,colID) < 1
+        ){
+            return new ResponseEntity<>("Document or Collection not found" ,HttpStatus.NOT_FOUND);
+        }
+
+        if(colRepo.checkDuplicateDocumentInCollection(colID,docID) == 1)
+            return new ResponseEntity<>("Duplicate at ID: " + docID,HttpStatus.NOT_ACCEPTABLE);
+
         colRepo.addDocumentIntoCollection(colID, docID);
 
-        return new ResponseEntity<>(collection, HttpStatus.OK);
+        return new ResponseEntity<>("", HttpStatus.OK);
     }
-    @DeleteMapping("/{colId}/add-document/{docId}")
-    public ResponseEntity<?> removeDocumentIntoCollection(@PathVariable("colId") int colID,@PathVariable("docId") long docID){
+    @PutMapping("/{colId}/add-document/")
+    public ResponseEntity<?> addListDocumentIntoCollection(
+            @PathVariable("colId") int colID,
+            @Nonnull HttpServletRequest servletRequest,
+            @RequestBody HashMap<String,Object> req){
+        String userID = tokenService.getUserID(servletRequest);
+
+        Collection col = colRepo.findCollectionNameByIDAndUserID(userID,colID);
+        if(col == null)
+            return new ResponseEntity<>("Not found collection",HttpStatus.NOT_FOUND);
+
+        List<Integer> docIDList = (List<Integer>) req.get("docIDs");
+
+        for(long ID : docIDList){
+           if((docRepo.existDocumentByUserIDAndDocID(userID,ID)) < 1){
+               return new ResponseEntity<>("Document ID: " + ID+ " not exist" ,HttpStatus.BAD_REQUEST);
+           }
+            if(colRepo.checkDuplicateDocumentInCollection(colID,ID) == 1)
+                return new ResponseEntity<>("Duplicate at ID: " + ID,HttpStatus.NOT_ACCEPTABLE);
+            colRepo.addDocumentIntoCollection(colID, ID);
+        }
+
+        return new ResponseEntity<>("", HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{colId}/remove-document/{docId}")
+    public ResponseEntity<?> removeDocumentOutToCollection(@PathVariable("colId") int colID,@PathVariable("docId") long docID){
 
         Document doc = docRepo.findById(docID).orElse(null);
         Collection collection = colRepo.findById(colID).orElse(null);
