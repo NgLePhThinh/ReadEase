@@ -3,10 +3,8 @@ package com.ReadEase.ReadEase.Controller.Document;
 
 import com.ReadEase.ReadEase.Controller.Document.Request.DocumentReq;
 import com.ReadEase.ReadEase.Model.*;
-import com.ReadEase.ReadEase.Repo.AnnotationRepo;
-import com.ReadEase.ReadEase.Repo.DocumentRepo;
-import com.ReadEase.ReadEase.Repo.TokenRepo;
-import com.ReadEase.ReadEase.Repo.UserRepo;
+import com.ReadEase.ReadEase.Model.Collection;
+import com.ReadEase.ReadEase.Repo.*;
 import com.ReadEase.ReadEase.Service.DriveService;
 import com.ReadEase.ReadEase.Service.TokenService;
 import com.google.api.client.auth.oauth2.TokenResponse;
@@ -30,6 +28,7 @@ public class DocumentController {
     private final DocumentRepo docRepo;
     private final UserRepo userRepo;
     private final TokenRepo tokenRepo;
+    private final CollectionRepo colRepo;
     private final AnnotationRepo annotationRepo;
     private final TokenService tokenService;
 
@@ -246,6 +245,63 @@ public class DocumentController {
 
         docRepo.updateDocumentStar(docID,docReq.getStar());
         return new ResponseEntity<>("Update star successfully!!",HttpStatus.OK);
+    }
+    @GetMapping("/{docID}/get-collection")
+    public ResponseEntity<?> getCollection(
+            @PathVariable("docID") int docID,
+            @Nonnull HttpServletRequest servletRequest
+    ){
+        String userID = tokenService.getUserID(servletRequest);
+
+        return new ResponseEntity<>(colRepo.getAllCollectionByDocID(docID), HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{docID}/remove-out-list-collection/")
+    public ResponseEntity<?> removeDocumentOutToListCollection(
+            @PathVariable("docID") int docID,
+            @Nonnull HttpServletRequest servletRequest,
+            @RequestBody HashMap<String,Object> req)
+    {
+        String userID = tokenService.getUserID(servletRequest);
+
+        int cnt = docRepo.existDocumentByUserIDAndDocID(userID,docID);
+        if(cnt < 1)
+            return new ResponseEntity<>("Not found collection",HttpStatus.NOT_FOUND);
+
+        List<Integer> docIDList = (List<Integer>) req.get("colIDs");
+
+        for(int ID : docIDList){
+            if(colRepo.existCollectionByUserIDAndColID(userID,ID) < 1){
+                return new ResponseEntity<>("Collection ID: " + ID+ " not exist" ,HttpStatus.BAD_REQUEST);
+            }
+            colRepo.removeDocumentIntoCollection(ID, docID);
+        }
+
+        return new ResponseEntity<>("", HttpStatus.OK);
+    }
+    @PutMapping("/{docID}/add-into-list-collection/")
+    public ResponseEntity<?> addDocumentIntoListCollection(
+            @PathVariable("docID") int docID,
+            @Nonnull HttpServletRequest servletRequest,
+            @RequestBody HashMap<String,Object> req){
+        String userID = tokenService.getUserID(servletRequest);
+
+        int cnt = docRepo.existDocumentByUserIDAndDocID(userID,docID);
+        if(cnt < 1)
+            return new ResponseEntity<>("Not found collection",HttpStatus.NOT_FOUND);
+
+        List<Integer> colIDList = (List<Integer>) req.get("colIDs");
+
+        for(int ID : colIDList){
+            if(colRepo.existCollectionByUserIDAndColID(userID,ID) < 1){
+                return new ResponseEntity<>("Collection ID: " + ID+ " not exist" ,HttpStatus.BAD_REQUEST);
+            }
+            if(colRepo.checkDuplicateDocumentInCollection(ID,docID) == 1)
+                return new ResponseEntity<>("The collection_document must not be duplicated.", HttpStatus.BAD_REQUEST);
+            colRepo.addDocumentIntoCollection(ID, docID);
+        }
+
+        return new ResponseEntity<>("", HttpStatus.OK);
     }
 
     @DeleteMapping("/delete/{docID}")

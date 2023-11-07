@@ -18,6 +18,9 @@ public interface CollectionRepo extends JpaRepository<Collection, Integer> {
 
     @Query(value = "SELECT * FROM collection where collection.USER_ID = ?1", nativeQuery = true)
     List<Collection> getAllCollectionByUserID(String userID);
+    @Query(value = "SELECT * FROM collection c inner join collection_document cd " +
+            " where c.ID = cd.COLLECTION_ID and cd.DOCUMENT_ID = ?1", nativeQuery = true)
+    List<Collection> getAllCollectionByDocID(long docID);
     //Cập nhật table Collection_Document
     @Transactional
     @Modifying
@@ -27,7 +30,7 @@ public interface CollectionRepo extends JpaRepository<Collection, Integer> {
     @Transactional
     @Modifying
 //    @Query(value = "insert into collection_document (COLLECTION_ID,DOCUMENT_ID) values (?1,?2)", nativeQuery = true)
-    @Query(value = "delete from  collection_document where COLLECTION_ID = ?1 and DOCUMENT_ID ?2 ", nativeQuery = true)
+    @Query(value = "delete from  collection_document where COLLECTION_ID = ?1 and DOCUMENT_ID = ?2 ", nativeQuery = true)
     void removeDocumentIntoCollection( int colId,long docId);
 
     //returns Tìm tên tất cả collection từ User.ID

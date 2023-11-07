@@ -36,7 +36,7 @@ public class CollectionController {
 
         return new ResponseEntity<>(colRepo.getAllCollectionByUserID(userID),HttpStatus.OK);
     }
-    @PostMapping("")
+    @PostMapping("/")
     public ResponseEntity<?> createCollection(@RequestBody CollectionReq req){
         User user = userRepo.findById(req.getUserID()).orElse(null);
         if(user == null) return new ResponseEntity<>("User not found",HttpStatus.NOT_FOUND);
@@ -51,8 +51,8 @@ public class CollectionController {
                 .name(req.getCollectionName())
                 .build();
         user.addCollection(_col);
-        colRepo.save(_col);
-        return new ResponseEntity<>("Create collection successfully!!!",HttpStatus.CREATED);
+
+        return new ResponseEntity<>(  colRepo.save(_col),HttpStatus.CREATED);
     }
     @PutMapping("/{colId}/add-document/{docId}")
     public ResponseEntity<?> addDocumentIntoCollection(
@@ -116,6 +116,31 @@ public class CollectionController {
         return new ResponseEntity<>(collection, HttpStatus.OK);
     }
 
+    //Xoa list document out to collection
+    @DeleteMapping("/{colId}/remove-document/")
+    public ResponseEntity<?> removeListDocumentOutToCollection(
+            @PathVariable("colId") int colID,
+            @Nonnull HttpServletRequest servletRequest,
+            @RequestBody HashMap<String,Object> req){
+        String userID = tokenService.getUserID(servletRequest);
+
+        Collection col = colRepo.findCollectionNameByIDAndUserID(userID,colID);
+        if(col == null)
+            return new ResponseEntity<>("Not found collection",HttpStatus.NOT_FOUND);
+
+        List<Integer> docIDList = (List<Integer>) req.get("docIDs");
+
+        for(long ID : docIDList){
+            if((docRepo.existDocumentByUserIDAndDocID(userID,ID)) < 1){
+                return new ResponseEntity<>("Document ID: " + ID+ " not exist" ,HttpStatus.BAD_REQUEST);
+            }
+            colRepo.removeDocumentIntoCollection(colID, ID);
+        }
+
+        return new ResponseEntity<>("", HttpStatus.OK);
+    }
+
+
     @PutMapping("/{id}")
     public ResponseEntity<?> renameCollection(@PathVariable("id") int colID,@RequestBody CollectionReq req){
         Collection _col = colRepo.findById(colID).orElse(null);
@@ -142,5 +167,6 @@ public class CollectionController {
         colRepo.deleteById(colID);
         return new ResponseEntity<>("Delete collection successfully!!!",HttpStatus.CREATED);
     }
+
 
 }
