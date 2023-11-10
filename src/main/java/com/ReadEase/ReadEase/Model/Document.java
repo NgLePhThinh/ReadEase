@@ -21,7 +21,7 @@ import java.util.Set;
 @NoArgsConstructor
 public class Document {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private long ID;
     @Column(nullable = false)
     private String name;

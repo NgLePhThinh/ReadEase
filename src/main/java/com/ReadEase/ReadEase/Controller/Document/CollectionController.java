@@ -117,7 +117,7 @@ public class CollectionController {
     }
 
     //Xoa list document out to collection
-    @DeleteMapping("/{colId}/remove-document/")
+    @PutMapping("/{colId}/remove-document/")
     public ResponseEntity<?> removeListDocumentOutToCollection(
             @PathVariable("colId") int colID,
             @Nonnull HttpServletRequest servletRequest,

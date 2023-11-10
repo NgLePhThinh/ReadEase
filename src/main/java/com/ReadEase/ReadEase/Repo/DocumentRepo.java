@@ -18,7 +18,7 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
     @Query(value = "SELECT count(*) FROM  document where document.USER_ID = ?1 and document.ID = ?2", nativeQuery = true)
     int existDocumentByUserIDAndDocID(String userID, long docID);
 
-    @Query(value ="SELECT count(*) FROM user inner join document where user.ID = ?1 and document.name = ?2" ,nativeQuery = true)
+    @Query(value ="SELECT count(*) FROM user inner join document where user.ID = document.USER_ID and user.ID = ?1 and document.name = ?2" ,nativeQuery = true)
     int countDocumentByName(String userID, String name);
 
     //returns Tìm tên tất cả document từ User.ID

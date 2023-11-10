@@ -3,10 +3,10 @@ package com.ReadEase.ReadEase.Model;
 
 import com.ReadEase.ReadEase.Config.StringPrefixedSequenceIdGenerator;
 import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Table;
 import lombok.*;
-import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
+import org.hibernate.annotations.*;
 import org.hibernate.annotations.Parameter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+
 public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq")
@@ -64,11 +65,15 @@ public class User implements UserDetails {
     @OneToMany(fetch = FetchType.LAZY,cascade = CascadeType.ALL)
     @JoinColumn(name ="USER_ID",nullable = false)
     @OnDelete(action =  OnDeleteAction.CASCADE)
+    @Fetch(FetchMode.SELECT)
+//    @BatchSize(size = 10)
     private Set<Document> documents;
 
     @OneToMany(fetch = FetchType.LAZY,cascade = CascadeType.ALL)
     @JoinColumn(name ="USER_ID",nullable = false)
     @OnDelete(action =  OnDeleteAction.CASCADE)
+    @Fetch(FetchMode.SUBSELECT)
+//    @BatchSize(size = 10)
     private Set<Collection> collections;
 
     public User(String email, String password, Role role,String avatar, String targetLanguage) {
@@ -172,3 +177,4 @@ public class User implements UserDetails {
 
 
 }
+

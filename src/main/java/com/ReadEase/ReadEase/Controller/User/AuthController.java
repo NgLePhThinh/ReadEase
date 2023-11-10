@@ -102,17 +102,23 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> loginWithGoogle(@Nonnull HttpServletResponse response, @RequestBody User req) {
+    public ResponseEntity<?> loginWithGoogle(@Nonnull HttpServletResponse response, @RequestBody User req) throws GeneralSecurityException, IOException {
         User user = userRepo.findUserByEmail(req.getEmail()).orElse(null);
         boolean isFirstLogin = false;
         if (user == null) {
             GeneratePassword generatePassword = new GeneratePassword();
             String pwd = generatePassword.generateStrongPassword(8);
+
+            emailService.sendPasswordForGGLogin(req.getEmail(),pwd);
             user = roleRepo.findById(1).map(role -> {
                 User _user = new User(req.getEmail(), passwordEncoder.encode(pwd), role, req.getAvatar(), req.getTargetLanguage());
                 _user.setAvatar(req.getAvatar());
                 return userRepo.save(_user);
             }).orElseThrow();
+
+            String folderID = driveService.createFolder(user.getID());
+            user.setIdDriveFolder(folderID);
+            userRepo.save(user);
 
             isFirstLogin = true;
         }
@@ -136,6 +142,8 @@ public class AuthController {
                 .userID(user.getID())
                 .email(user.getEmail())
                 .avatar(user.getAvatar())
+                .targetLanguage(user.getTargetLanguage())
+                .idDriveFolder(user.getIdDriveFolder())
                 .token(jwtToken)
                 .build();
 
@@ -144,6 +152,7 @@ public class AuthController {
             res.setCurrentDocumentReading(user.getLastReadingDocument());
             res.setCollections(getCollectionCustom(user.getCollections()));
             res.setDocuments(user.getDocumentCustom(0, 10));
+            res.setTotalCapacity(user.getTotalCapacity());
         }
 
         return new ResponseEntity<>(res, HttpStatus.OK);
@@ -187,6 +196,7 @@ public class AuthController {
                 .avatar(user.getAvatar())
                 .token(jwtToken)
                 .totalDocument(user.getDocuments().size())
+                .totalCapacity(user.getTotalCapacity())
                 .targetLanguage(user.getTargetLanguage())
                 .idDriveFolder(user.getIdDriveFolder())
                 .currentDocumentReading(user.getLastReadingDocument())
@@ -233,13 +243,13 @@ public class AuthController {
         User user = userRepo.findUserByEmail(req.getEmail()).orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email invalid!!!!")
         );
-        GeneratePassword generatePassword = new GeneratePassword();
+
         String resetPasswordToken = jwtService.generateResetPasswordToken(user);
 
         saveUserToken(user, resetPasswordToken, TokenType.RESET_PASSWORD);
 
         emailService.sendHTMLEmail(user.getEmail(), resetPasswordToken);
-        return new ResponseEntity<>(generatePassword.generateStrongPassword(8), HttpStatus.OK);
+        return new ResponseEntity<>("", HttpStatus.OK);
     }
 
     @GetMapping("/forgot-password/step2")

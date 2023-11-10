@@ -8,6 +8,9 @@ server:
 #    allowed-headers: Content-Type, X-Requested-With, accept, Origin, Access-Control-Request-Method,  Access-Control-Request-Headers
 #    exposed-headers: Access-Control-Allow-Origin
 spring:
+  .mvc:
+    async:
+      request-timeout: 100000
   data:
     mongodb:
       uri: mongodb+srv://nlnktpm:vTJf1PgQQJFUxo2v@cluster0.79i259f.mongodb.net/?retryWrites=true&w=majority

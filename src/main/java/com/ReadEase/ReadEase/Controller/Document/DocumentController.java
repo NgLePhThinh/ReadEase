@@ -11,6 +11,7 @@ import com.google.api.client.auth.oauth2.TokenResponse;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -157,7 +158,7 @@ public class DocumentController {
 
 
     @PostMapping("/add")
-    public ResponseEntity<?> createDocument(@RequestBody DocumentReq req) {
+    public ResponseEntity<?> createDocument(@NotNull @RequestBody DocumentReq req) {
         User user = userRepo.findById(req.getUserID()).orElse(null);
         if(user == null)
             return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
@@ -167,21 +168,21 @@ public class DocumentController {
                 return new ResponseEntity<>("The document name must not be duplicated.", HttpStatus.BAD_REQUEST);
             }
         }
-        Document doc = Document.builder()
-                .name(req.getName())
-                .url(req.getUrl())
-                .thumbnailLink(req.getThumbnailLink())
-                .size(req.getSize())
-                .totalPages(req.getTotalPages())
-                .createAt(new Date())
-                .lastRead(new Date())
-                .star(-1)
-                .numberOfPagesReading(0)
-                .build();
-        user.setTotalCapacity(user.getTotalCapacity() + doc.getSize());
-        user.getDocuments().add(doc);
-        docRepo.save(doc);
-        userRepo.save(user);
+            Document doc = Document.builder()
+                    .name(req.getName())
+                    .url(req.getUrl())
+                    .thumbnailLink(req.getThumbnailLink())
+                    .size(req.getSize())
+                    .totalPages(req.getTotalPages())
+                    .createAt(new Date())
+                    .lastRead(new Date())
+                    .star(-1)
+                    .numberOfPagesReading(0)
+                    .build();
+            user.setTotalCapacity(user.getTotalCapacity() + doc.getSize());
+            user.getDocuments().add(doc);
+            docRepo.save(doc);
+            userRepo.save(user);
 
         return new ResponseEntity<>(doc, HttpStatus.CREATED);
     }
@@ -256,7 +257,7 @@ public class DocumentController {
         return new ResponseEntity<>(colRepo.getAllCollectionByDocID(docID), HttpStatus.OK);
     }
 
-    @DeleteMapping("/{docID}/remove-out-list-collection/")
+    @PutMapping("/{docID}/remove-out-list-collection/")
     public ResponseEntity<?> removeDocumentOutToListCollection(
             @PathVariable("docID") int docID,
             @Nonnull HttpServletRequest servletRequest,

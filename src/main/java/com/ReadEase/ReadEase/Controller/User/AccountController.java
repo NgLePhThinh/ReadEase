@@ -31,7 +31,7 @@ public class AccountController {
             return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
 
         if(!passwordEncoder.matches(req.getOldPwd(), resUser.getPassword()))
-            return new ResponseEntity<>("Password is not valid",HttpStatus.OK);
+            return new ResponseEntity<>("Password is not valid",HttpStatus.BAD_REQUEST);
         resUser.setPassword(passwordEncoder.encode(req.getNewPwd()));
         userRepo.save(resUser);
         return new ResponseEntity<>("Change Password Successfully!!", HttpStatus.OK);

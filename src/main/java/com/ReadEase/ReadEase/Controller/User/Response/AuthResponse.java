@@ -24,4 +24,5 @@ public class AuthResponse {
     private int totalDocument;
     private String targetLanguage;
     private String idDriveFolder;
+    private float totalCapacity;
 }

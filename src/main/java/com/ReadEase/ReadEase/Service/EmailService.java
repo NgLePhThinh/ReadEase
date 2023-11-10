@@ -18,9 +18,12 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class EmailService {
     public static final String UTF_8_ENCODING = "UTF-8";
-    public static final String EMAIL_TEMPLATE = "emailtemplate";
+    public static final String RESET_PASSWORD_EMAIL_TEMPLATE = "emailtemplate";
+    public static final String GG_PASSWORD_EMAIL_TEMPLATE = "index";
+
     public static final String TEXT_HTML_ENCONDING = "text/html";
-    public static final String RESET_YOUR_READ_EASE_PASSWORD = "Reset your ReadEase Password";
+    public static final String RESET_YOUR_READEASE_PASSWORD = "Đặt lại mật khẩu tài khoản ReadEase";
+    public static final String READ_EASE_PASSWORD = "Mật khẩu tài khoản ReadEase liên kết với Google";
     @Value("${spring.mail.verify.host}")
     private String host;
     @Value("${spring.mail.username}")
@@ -33,7 +36,7 @@ public class EmailService {
     public void sendSimpleEmail(String name, String to, String token){
         try{
             SimpleMailMessage message = new SimpleMailMessage();
-            message.setSubject(RESET_YOUR_READ_EASE_PASSWORD);
+            message.setSubject(RESET_YOUR_READEASE_PASSWORD);
             message.setFrom(fromEmail);
             message.setTo(to);
             message.setText(EmailUtils.getEmailMessage(name,host, token));
@@ -49,11 +52,11 @@ public class EmailService {
         try{
             Context context = new Context();
             context.setVariables(Map.of("url",EmailUtils.getVerificationUrl(clientHost,token)));
-            String text = templateEngine.process(EMAIL_TEMPLATE, context);
+            String text = templateEngine.process(RESET_PASSWORD_EMAIL_TEMPLATE, context);
             MimeMessage message = getMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, UTF_8_ENCODING);
             helper.setPriority(1);
-            helper.setSubject(RESET_YOUR_READ_EASE_PASSWORD);
+            helper.setSubject(RESET_YOUR_READEASE_PASSWORD);
             helper.setFrom(fromEmail);
             helper.setTo(to);
             helper.setText(text, true);
@@ -63,7 +66,26 @@ public class EmailService {
             System.out.println(e.getMessage());
             throw  new RuntimeException(e.getMessage());
         }
+    }
 
+    public void sendPasswordForGGLogin(String to, String pwd){
+        try{
+            Context context = new Context();
+            context.setVariables(Map.of("pwd",pwd));
+            String text = templateEngine.process(GG_PASSWORD_EMAIL_TEMPLATE, context);
+            MimeMessage message = getMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, UTF_8_ENCODING);
+            helper.setPriority(1);
+            helper.setSubject(READ_EASE_PASSWORD);
+            helper.setFrom(fromEmail);
+            helper.setTo(to);
+            helper.setText(text, true);
+
+            emailSender.send(message);
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+            throw  new RuntimeException(e.getMessage());
+        }
     }
     private MimeMessage getMimeMessage() {
         return emailSender.createMimeMessage();
