@@ -320,7 +320,14 @@ public class DocumentController {
 
         userRepo.updateUserTotalCapacityBeforeDeleteDoc(userID,doc.getSize());
         docRepo.deleteById(docID);
-        return new ResponseEntity<>("Ok",HttpStatus.OK);
+
+        User resUser = userRepo.findById(userID).orElse(null);
+
+        return new ResponseEntity<>(new HashMap<String, Object> () {
+            {
+                put("totalCapacity", resUser.getTotalCapacity());
+            }
+        },HttpStatus.OK);
     }
 
 }

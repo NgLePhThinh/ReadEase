@@ -14,15 +14,21 @@ spring:
   data:
     mongodb:
       uri: mongodb+srv://nlnktpm:vTJf1PgQQJFUxo2v@cluster0.79i259f.mongodb.net/?retryWrites=true&w=majority
-      database: readease
+      database: ReadEaseDB # readease
   profiles:
     active: ${ACTIVE_PROFILE:dev}
   main:
     allow-circular-references: true
   datasource:
-    url:  jdbc:mysql://${MYSQL_HOST:localhost}:3308/readease
-    username: root
-    password: root_password
+    #   DBS Online
+    url: jdbc:mysql://readease-db.mysql.database.azure.com:3306/readease-db?useSSL=true&createDatabaseIfNotExist=true
+    username: root_readease
+    password: admin@readease1
+
+    #    DBS Locol
+    #    url:  jdbc:mysql://${MYSQL_HOST:localhost}:3308/readease
+    #    username: root
+    #    password: root_password
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:

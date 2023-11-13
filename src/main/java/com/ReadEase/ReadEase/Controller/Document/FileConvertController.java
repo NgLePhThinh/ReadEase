@@ -68,8 +68,10 @@ public class FileConvertController {
         document.setSize(getDocumentSize(fileResource));
         document.setTotalPages(getTotalPage(fileResource));
 
+        user.setTotalCapacity(user.getTotalCapacity() + document.getSize());
         user.getDocuments().add(document);
         docRepo.save(document);
+        userRepo.save(user);
 
         deleteFile(fileResource);
 

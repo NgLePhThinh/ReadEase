@@ -51,7 +51,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String isValidToken = tokenRepo.findAccessTokenByUserID(userID);
             // Lỗi token không tồn tại trong csdl.
             if(isValidToken == null){
-                response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE); // 406
+                response.setStatus(HttpServletResponse.SC_PROXY_AUTHENTICATION_REQUIRED); // 407
                 return;
             }
             // Lỗi token của phiên đăng nhập trước đó.
